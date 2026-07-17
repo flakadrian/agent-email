@@ -7,7 +7,7 @@ als nächste Bausteine dazu, sobald die Verbindung steht.
 ## 1. Setup
 
 ```bash
-cd email-agent
+cd agent-email
 python3 -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
