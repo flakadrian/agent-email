@@ -15,6 +15,11 @@ from message_loader import load_message
 
 COMMANDS = {"test", "listen", "poll", "drive-auth"}
 
+# Mail-Betreffzeilen können Emojis/Sonderzeichen enthalten, die die
+# Windows-Konsole standardmäßig nicht darstellen kann (UnicodeEncodeError).
+# UTF-8 mit Ersatzzeichen statt Absturz.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 
 def handle_message(anthropic_config: AnthropicConfig, drive_service, client, uid: int) -> None:
     message = load_message(client, uid)
