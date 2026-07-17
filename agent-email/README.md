@@ -1,9 +1,8 @@
-# E-Mail-Agent – IMAP-Anbindung + Klassifizierung
+# E-Mail-Agent – IMAP-Anbindung + Klassifizierung + Google-Drive-Ablage
 
 Dieser Teil kümmert sich um den IMAP-Zugriff (Verbinden, Login, auf neue Mails
-reagieren) sowie das Laden und Klassifizieren neuer Mails über die Claude API.
-Die Ablage in Google Drive kommt als nächster Baustein dazu, sobald die
-dafür nötigen OAuth-Credentials eingerichtet sind.
+reagieren), das Laden und Klassifizieren neuer Mails über die Claude API
+sowie die Ablage der Anhänge in Google Drive.
 
 ## 1. Setup
 
@@ -78,6 +77,31 @@ UID 123: 'Stromrechnung Juli' -> Kategorie: Rechnungen/Zahlungen
 Bei Fehlern (z. B. API nicht erreichbar, unerwartete Antwort) fällt die
 Klassifizierung auf `Sonstiges` zurück statt abzustürzen.
 
+Mails **mit Anhang** werden zusätzlich in Google Drive abgelegt (Mails ohne
+Anhang bleiben nur klassifiziert, siehe Kategorienliste in `CLAUDE.md`):
+
+```
+  2 Anhang/Anhänge in Drive abgelegt (Rechnungen-Zahlungen)
+```
+
+## 5. Google-Drive-Ablage einrichten (einmalig)
+
+Voraussetzung: ein Google-Cloud-Projekt mit aktivierter Drive API, OAuth-
+Consent-Screen (External, deine eigene Adresse als Testnutzer) und einer
+Desktop-OAuth-Client-ID. Die dabei heruntergeladene JSON-Datei legst du als
+`agent-email/credentials.json` ab (per `.gitignore` von Git ausgeschlossen).
+
+Danach einmalig:
+
+```bash
+python main.py drive-auth
+```
+
+Das öffnet den Browser zur Google-Zustimmung und speichert den Zugriffstoken
+in `token.json` (ebenfalls von Git ausgeschlossen, wird bei Ablauf automatisch
+erneuert). Ab dann legen `listen`/`poll` Anhänge automatisch unter
+`Email-Ablage/<Kategorie>/` in deinem Drive ab (Pfadschema siehe `CLAUDE.md`).
+
 ## Tests
 
 ```bash
@@ -86,9 +110,4 @@ pytest
 ```
 
 Die Tests laufen komplett gemockt (kein echter IMAP-Server, kein echter
-API-Call).
-
-## Nächste Schritte (noch nicht Teil dieses Bausteins)
-
-- Strukturierte Ablage in Google Drive gemäß dem in `CLAUDE.md` festgelegten
-  Pfadschema (erfordert OAuth-Setup im Google-Konto)
+API-Call, kein echter Drive-Zugriff).

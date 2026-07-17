@@ -11,9 +11,8 @@ Vollständigen Fahrplan mit allen Phasen und Entscheidungen siehe
 ## Aktueller Stand
 
 - Phase 0 abgeschlossen (Use Case, Tech-Stack, Interface-Vertrag definiert)
-- Erster Agent in Arbeit: `agent-email/` – IMAP-Anbindung und Klassifizierung
-  stehen, Google-Drive-Ablage fehlt noch (wartet auf OAuth-Setup im
-  Google-Konto des Nutzers)
+- Erster Agent fertig: `agent-email/` – IMAP-Anbindung, Klassifizierung und
+  Google-Drive-Ablage stehen
 - Orchestrator selbst existiert noch nicht (kommt in Phase 1)
 
 ## Tech-Stack agent-email
@@ -40,6 +39,7 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE
 - `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
+- `agent-email/drive_client.py` – OAuth-Flow + Ablage der Anhänge in Google Drive
 - `agent-email/main.py` – Einstiegspunkt/CLI
 
 ## Regeln
@@ -55,11 +55,11 @@ python main.py listen  # auf neue Mails warten (IDLE)
 
 ## Nächster Schritt
 
-Strukturierte Ablage in Google Drive gemäß dem Pfadschema (siehe Anhang
-unten). Voraussetzung: Google-Cloud-Projekt mit OAuth-Credentials im
-Google-Konto des Nutzers einrichten (Drive API aktivieren, Consent Screen,
-Credentials-Download) – erfordert manuelle Schritte, die nicht automatisiert
-durchführbar sind.
+`agent-email` ist damit abgeschlossen (IMAP, Klassifizierung, Drive-Ablage).
+Nächster Baustein laut Fahrplan: der Orchestrator selbst (Phase 1) sowie
+weitere Einzel-Agenten – jeweils mit eigenem Namen, Zuständigkeits-
+Beschreibung, erlaubten Werkzeugen und definiertem Ein-/Ausgabeformat (siehe
+Regeln oben).
 
 ## Anhang: Kategorienliste (Stand 2026-07-17)
 
@@ -71,12 +71,14 @@ durchführbar sind.
 6. Privat
 7. Sonstiges (Fallback für alles Unklare)
 
-## Anhang: Pfadschema Google Drive (Stand 2026-07-17)
+## Anhang: Pfadschema Google Drive (Stand 2026-07-17, präzisiert 2026-07-17)
 
-Flach nach Kategorie, kein Jahresordner:
+Flach nach Kategorie, kein Jahresordner. Nur Mails **mit Anhang** werden
+abgelegt; der Original-Dateiname bleibt Teil des Dateinamens (wichtig bei
+mehreren Anhängen pro Mail):
 
 ```
-/Email-Ablage/<Kategorie>/<Datum>_<Betreff>.<ext>
+/Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
 ```
 
-Beispiel: `/Email-Ablage/Rechnungen-Zahlungen/2026-07-17_Stromrechnung-Juli.pdf`
+Beispiel: `/Email-Ablage/Rechnungen-Zahlungen/2026-07-17_Stromrechnung Juli_rechnung.pdf`
