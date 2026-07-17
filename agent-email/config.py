@@ -24,6 +24,15 @@ class AnthropicConfig:
     model: str
 
 
+@dataclass
+class OneDriveConfig:
+    client_id: str
+    tenant: str
+
+
+STORAGE_PROVIDERS = {"google_drive", "onedrive"}
+
+
 def _require(name: str) -> str:
     value = os.getenv(name)
     if not value:
@@ -50,3 +59,20 @@ def load_anthropic_config() -> AnthropicConfig:
         api_key=_require("ANTHROPIC_API_KEY"),
         model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
     )
+
+
+def load_onedrive_config() -> OneDriveConfig:
+    return OneDriveConfig(
+        client_id=_require("ONEDRIVE_CLIENT_ID"),
+        tenant=os.getenv("ONEDRIVE_TENANT", "common"),
+    )
+
+
+def load_storage_provider() -> str:
+    provider = os.getenv("STORAGE_PROVIDER", "google_drive").strip().lower()
+    if provider not in STORAGE_PROVIDERS:
+        raise RuntimeError(
+            f"Unbekannter STORAGE_PROVIDER '{provider}'. Erlaubt: "
+            f"{', '.join(sorted(STORAGE_PROVIDERS))}."
+        )
+    return provider

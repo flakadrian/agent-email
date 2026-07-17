@@ -9,9 +9,6 @@ get_service() liest nur den bereits erteilten, gespeicherten Token.
 """
 
 import os
-import re
-from email.utils import parsedate_to_datetime
-from datetime import date
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -19,6 +16,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
+from file_naming import message_date, sanitize_filename
 from message_loader import LoadedMessage
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
@@ -42,7 +40,7 @@ def get_service():
     if not os.path.exists(TOKEN_PATH):
         raise RuntimeError(
             "Kein Google-Drive-Token gefunden. Bitte einmalig "
-            "'python main.py drive-auth' ausführen."
+            "'python main.py storage-auth' ausführen."
         )
 
     creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
@@ -75,18 +73,6 @@ def _find_or_create_folder(service, name: str, parent_id: str | None = None) -> 
     return folder["id"]
 
 
-def _sanitize_filename(text: str) -> str:
-    sanitized = re.sub(r'[\\/:*?"<>|]', "_", text).strip()
-    return sanitized[:80] or "ohne-betreff"
-
-
-def _message_date(message: LoadedMessage) -> str:
-    try:
-        return parsedate_to_datetime(message.date).date().isoformat()
-    except (TypeError, ValueError):
-        return date.today().isoformat()
-
-
 def upload_attachments(service, message: LoadedMessage, category: str) -> list[str]:
     """Lädt alle Anhänge einer Mail in den passenden Kategorie-Ordner hoch.
 
@@ -100,8 +86,8 @@ def upload_attachments(service, message: LoadedMessage, category: str) -> list[s
     category_folder_name = category.replace("/", "-")
     category_id = _find_or_create_folder(service, category_folder_name, root_id)
 
-    date_prefix = _message_date(message)
-    subject_slug = _sanitize_filename(message.subject)
+    date_prefix = message_date(message)
+    subject_slug = sanitize_filename(message.subject)
 
     uploaded_ids = []
     for attachment in message.attachments:

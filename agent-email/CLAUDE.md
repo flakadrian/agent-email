@@ -12,14 +12,15 @@ Vollständigen Fahrplan mit allen Phasen und Entscheidungen siehe
 
 - Phase 0 abgeschlossen (Use Case, Tech-Stack, Interface-Vertrag definiert)
 - Erster Agent fertig: `agent-email/` – IMAP-Anbindung, Klassifizierung und
-  Google-Drive-Ablage stehen
+  Cloud-Ablage (Google Drive oder OneDrive, konfigurierbar) stehen
 - Orchestrator selbst existiert noch nicht (kommt in Phase 1)
 
 ## Tech-Stack agent-email
 
 - Python, IMAP über `imapclient` (IDLE bevorzugt, Polling als Fallback)
 - Klassifizierung über die Claude API
-- Ablage über die Google Drive API
+- Ablage wahlweise über Google Drive API oder Microsoft Graph API
+  (OneDrive), Auswahl per `STORAGE_PROVIDER`
 - Läuft als eigenständiger Dienst, nicht als Teil einer Chat-Session
 
 ## Befehle
@@ -39,8 +40,12 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE
 - `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
+- `agent-email/file_naming.py` – gemeinsame Dateinamens-/Datums-Hilfsfunktionen
+  für die Cloud-Ablage
 - `agent-email/drive_client.py` – OAuth-Flow + Ablage der Anhänge in Google Drive
-- `agent-email/main.py` – Einstiegspunkt/CLI
+- `agent-email/onedrive_client.py` – OAuth-Flow + Ablage der Anhänge in OneDrive
+- `agent-email/main.py` – Einstiegspunkt/CLI, wählt Storage-Provider per
+  `STORAGE_PROVIDER`
 
 ## Regeln
 
@@ -71,14 +76,17 @@ Regeln oben).
 6. Privat
 7. Sonstiges (Fallback für alles Unklare)
 
-## Anhang: Pfadschema Google Drive (Stand 2026-07-17, präzisiert 2026-07-17)
+## Anhang: Pfadschema Cloud-Ablage (Stand 2026-07-17, erweitert 2026-07-17)
 
-Flach nach Kategorie, kein Jahresordner. Nur Mails **mit Anhang** werden
-abgelegt; der Original-Dateiname bleibt Teil des Dateinamens (wichtig bei
-mehreren Anhängen pro Mail):
+Flach nach Kategorie, kein Jahresordner, identisch für Google Drive und
+OneDrive. Nur Mails **mit Anhang** werden abgelegt; der Original-Dateiname
+bleibt Teil des Dateinamens (wichtig bei mehreren Anhängen pro Mail):
 
 ```
-/Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
+Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
 ```
 
-Beispiel: `/Email-Ablage/Rechnungen-Zahlungen/2026-07-17_Stromrechnung Juli_rechnung.pdf`
+Beispiel: `Email-Ablage/Rechnungen-Zahlungen/2026-07-17_Stromrechnung Juli_rechnung.pdf`
+
+Welcher Dienst genutzt wird, legt `STORAGE_PROVIDER` (`google_drive` oder
+`onedrive`) in der `.env` fest — nicht beide gleichzeitig.
