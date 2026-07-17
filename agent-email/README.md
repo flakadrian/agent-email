@@ -1,8 +1,9 @@
-# E-Mail-Agent – IMAP-Anbindung (Phase 1, Schritt 1)
+# E-Mail-Agent – IMAP-Anbindung + Klassifizierung
 
-Dieser Teil kümmert sich nur um den IMAP-Zugriff: Verbinden, Login, auf neue
-Mails reagieren. Klassifizierung (Claude API) und Ablage (Google Drive) kommen
-als nächste Bausteine dazu, sobald die Verbindung steht.
+Dieser Teil kümmert sich um den IMAP-Zugriff (Verbinden, Login, auf neue Mails
+reagieren) sowie das Laden und Klassifizieren neuer Mails über die Claude API.
+Die Ablage in Google Drive kommt als nächster Baustein dazu, sobald die
+dafür nötigen OAuth-Credentials eingerichtet sind.
 
 ## 1. Setup
 
@@ -30,6 +31,10 @@ Dann `.env` mit einem Editor öffnen und ausfüllen:
   verlangen ein separates **App-Passwort** statt deines normalen Passworts.
   Das legst du in den Sicherheitseinstellungen deines E-Mail-Kontos an.
 - **IMAP_FOLDER** – meist `INBOX`.
+- **ANTHROPIC_API_KEY** – für die Klassifizierung über die Claude API. Zu
+  erstellen unter https://console.anthropic.com/settings/keys.
+- **ANTHROPIC_MODEL** – optional, Standard ist ein schnelles/günstiges Modell.
+  Reicht für die Klassifizierung anhand der festen Kategorienliste völlig aus.
 
 Die `.env` bleibt lokal bei dir, sie wird über `.gitignore` von Git
 ausgeschlossen und landet nie in einem Repository.
@@ -62,12 +67,28 @@ python main.py listen   # bevorzugt: IMAP IDLE, reagiert nahezu sofort
 python main.py poll     # Fallback, falls der Anbieter kein IDLE unterstützt
 ```
 
-Aktuell wird bei neuen Mails nur die UID ausgegeben (`print_message` in
-`main.py`). Das ist der Anschlusspunkt für den nächsten Schritt.
+Bei neuen Mails wird der Nachrichteninhalt inkl. Anhänge geladen (siehe
+`message_loader.py`) und über die Claude API einer der festen Kategorien
+zugeordnet (siehe `classifier.py`, Kategorienliste in `CLAUDE.md`). Beispiel:
+
+```
+UID 123: 'Stromrechnung Juli' -> Kategorie: Rechnungen/Zahlungen
+```
+
+Bei Fehlern (z. B. API nicht erreichbar, unerwartete Antwort) fällt die
+Klassifizierung auf `Sonstiges` zurück statt abzustürzen.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Die Tests laufen komplett gemockt (kein echter IMAP-Server, kein echter
+API-Call).
 
 ## Nächste Schritte (noch nicht Teil dieses Bausteins)
 
-- Nachrichteninhalt + Anhänge aus der UID laden
-- Klassifizierung über die Claude API anhand der festgelegten Kategorienliste
-- Strukturierte Ablage in Google Drive gemäß dem im Fahrplan festgelegten
-  Pfadschema
+- Strukturierte Ablage in Google Drive gemäß dem in `CLAUDE.md` festgelegten
+  Pfadschema (erfordert OAuth-Setup im Google-Konto)

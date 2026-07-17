@@ -18,6 +18,12 @@ class ImapConfig:
     folder: str
 
 
+@dataclass
+class AnthropicConfig:
+    api_key: str
+    model: str
+
+
 def _require(name: str) -> str:
     value = os.getenv(name)
     if not value:
@@ -36,4 +42,11 @@ def load_config() -> ImapConfig:
         password=_require("IMAP_PASSWORD"),
         use_ssl=os.getenv("IMAP_USE_SSL", "true").lower() == "true",
         folder=os.getenv("IMAP_FOLDER", "INBOX"),
+    )
+
+
+def load_anthropic_config() -> AnthropicConfig:
+    return AnthropicConfig(
+        api_key=_require("ANTHROPIC_API_KEY"),
+        model=os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
     )

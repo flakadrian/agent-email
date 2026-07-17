@@ -5,12 +5,18 @@ kommen als nächste Ausbaustufe dazu (siehe README).
 """
 
 import sys
+from functools import partial
 
+from classifier import classify
+from config import AnthropicConfig, load_anthropic_config
 from imap_client import test_connection
+from message_loader import load_message
 
 
-def print_message(_client, uid: int) -> None:
-    print(f"Neue Nachricht erkannt, UID {uid} (Verarbeitung folgt in nächster Ausbaustufe)")
+def handle_message(anthropic_config: AnthropicConfig, client, uid: int) -> None:
+    message = load_message(client, uid)
+    category = classify(message, anthropic_config)
+    print(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
 
 
 def main() -> None:
@@ -29,11 +35,11 @@ def main() -> None:
 
     if command == "listen":
         from imap_client import idle_listen
-        idle_listen(print_message)
+        idle_listen(partial(handle_message, load_anthropic_config()))
 
     if command == "poll":
         from imap_client import poll_new_messages
-        poll_new_messages(print_message)
+        poll_new_messages(partial(handle_message, load_anthropic_config()))
 
 
 if __name__ == "__main__":

@@ -11,8 +11,9 @@ Vollständigen Fahrplan mit allen Phasen und Entscheidungen siehe
 ## Aktueller Stand
 
 - Phase 0 abgeschlossen (Use Case, Tech-Stack, Interface-Vertrag definiert)
-- Erster Agent in Arbeit: `agent-email/` – IMAP-Anbindung steht, Klassifizierung
-  und Google-Drive-Ablage fehlen noch
+- Erster Agent in Arbeit: `agent-email/` – IMAP-Anbindung und Klassifizierung
+  stehen, Google-Drive-Ablage fehlt noch (wartet auf OAuth-Setup im
+  Google-Konto des Nutzers)
 - Orchestrator selbst existiert noch nicht (kommt in Phase 1)
 
 ## Tech-Stack agent-email
@@ -37,6 +38,8 @@ python main.py listen  # auf neue Mails warten (IDLE)
 
 - `agent-email/config.py` – lädt/validiert Umgebungsvariablen
 - `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE
+- `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
+- `agent-email/classifier.py` – Klassifizierung über die Claude API
 - `agent-email/main.py` – Einstiegspunkt/CLI
 
 ## Regeln
@@ -52,9 +55,11 @@ python main.py listen  # auf neue Mails warten (IDLE)
 
 ## Nächster Schritt
 
-Nachrichteninhalt + Anhänge aus der UID laden, über die Claude API anhand der
-festen Kategorienliste klassifizieren, strukturiert in Google Drive ablegen
-(Pfadschema siehe Anhang unten).
+Strukturierte Ablage in Google Drive gemäß dem Pfadschema (siehe Anhang
+unten). Voraussetzung: Google-Cloud-Projekt mit OAuth-Credentials im
+Google-Konto des Nutzers einrichten (Drive API aktivieren, Consent Screen,
+Credentials-Download) – erfordert manuelle Schritte, die nicht automatisiert
+durchführbar sind.
 
 ## Anhang: Kategorienliste (Stand 2026-07-17)
 
