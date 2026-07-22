@@ -6,3 +6,9 @@ google-auth-httplib2>=0.2
 google-auth-oauthlib>=1.2
 msal>=1.28
 requests>=2.31
+
+# Nutzt die Betriebssystem-Zertifikatsablage statt certifi. Auf Firmenrechnern
+# mit SSL-Inspektionsproxy schlagen sonst alle HTTPS-Calls (Claude/Google-APIs)
+# mit "CERTIFICATE_VERIFY_FAILED" fehl, da das firmeneigene Root-Zertifikat
+# nicht im certifi-Bundle von Python liegt.
+pip-system-certs>=4.0
