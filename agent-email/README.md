@@ -13,6 +13,12 @@ source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+Auf Firmenrechnern mit SSL-Inspektionsproxy (z. B. Zscaler/Netskope) können
+HTTPS-Calls zur Claude-/Google-API sonst mit `CERTIFICATE_VERIFY_FAILED`
+fehlschlagen. `requirements.txt` enthält dafür bereits `pip-system-certs`,
+das die Betriebssystem-Zertifikatsablage statt des Python-eigenen
+`certifi`-Bundles nutzt.
+
 ## 2. Zugangsdaten eintragen
 
 ```bash
