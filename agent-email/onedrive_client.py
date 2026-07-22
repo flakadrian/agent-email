@@ -1,15 +1,15 @@
-"""Ablage klassifizierter Mail-Anhänge in Microsoft OneDrive (Microsoft Graph API).
+﻿"""Ablage klassifizierter Mail-AnhÃ¤nge in Microsoft OneDrive (Microsoft Graph API).
 
 Pfadschema (siehe CLAUDE.md-Anhang), identisch zu drive_client.py:
     Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
 
-Der OAuth-Consent (run_auth_flow) ist ein einmaliger, ausschließlich vom
-Nutzer selbst auszuführender Schritt (siehe main.py "storage-auth"-Befehl) -
+Der OAuth-Consent (run_auth_flow) ist ein einmaliger, ausschlieÃŸlich vom
+Nutzer selbst auszufÃ¼hrender Schritt (siehe main.py "storage-auth"-Befehl) -
 get_service() liest nur den bereits erteilten, gespeicherten Token-Cache.
 
-Vereinfachung gegenüber Google Drive: Microsoft Graph erlaubt Pfad-
+Vereinfachung gegenÃ¼ber Google Drive: Microsoft Graph erlaubt Pfad-
 Adressierung beim Upload und legt fehlende Zwischenordner automatisch an,
-ein manuelles "find-or-create-folder" ist daher nicht nötig.
+ein manuelles "find-or-create-folder" ist daher nicht nÃ¶tig.
 """
 
 import os
@@ -62,11 +62,11 @@ def run_auth_flow() -> None:
 
 
 def get_service() -> str:
-    """Liefert ein gültiges Access-Token aus dem gespeicherten Cache (kein Login-Flow)."""
+    """Liefert ein gÃ¼ltiges Access-Token aus dem gespeicherten Cache (kein Login-Flow)."""
     if not os.path.exists(TOKEN_CACHE_PATH):
         raise RuntimeError(
             "Kein OneDrive-Token gefunden. Bitte einmalig "
-            "'python main.py storage-auth' ausführen."
+            "'python main.py storage-auth' ausfÃ¼hren."
         )
 
     config = load_onedrive_config()
@@ -79,7 +79,7 @@ def get_service() -> str:
     if not accounts:
         raise RuntimeError(
             "Kein OneDrive-Konto im Token-Cache gefunden. Bitte "
-            "'python main.py storage-auth' erneut ausführen."
+            "'python main.py storage-auth' erneut ausfÃ¼hren."
         )
 
     result = app.acquire_token_silent(SCOPES, account=accounts[0])
@@ -87,17 +87,17 @@ def get_service() -> str:
 
     if not result or "access_token" not in result:
         raise RuntimeError(
-            "OneDrive-Token abgelaufen oder ungültig. Bitte "
-            "'python main.py storage-auth' erneut ausführen."
+            "OneDrive-Token abgelaufen oder ungÃ¼ltig. Bitte "
+            "'python main.py storage-auth' erneut ausfÃ¼hren."
         )
 
     return result["access_token"]
 
 
 def upload_attachments(access_token: str, message: LoadedMessage, category: str) -> list[str]:
-    """Lädt alle Anhänge einer Mail in den passenden Kategorie-Ordner in OneDrive hoch.
+    """LÃ¤dt alle AnhÃ¤nge einer Mail in den passenden Kategorie-Ordner in OneDrive hoch.
 
-    Gibt die OneDrive-Item-IDs der hochgeladenen Dateien zurück. Mails ohne
+    Gibt die OneDrive-Item-IDs der hochgeladenen Dateien zurÃ¼ck. Mails ohne
     Anhang werden bewusst nicht abgelegt (siehe CLAUDE.md-Anhang).
     """
     if not message.attachments:
@@ -125,3 +125,5 @@ def upload_attachments(access_token: str, message: LoadedMessage, category: str)
         uploaded_ids.append(response.json()["id"])
 
     return uploaded_ids
+
+
