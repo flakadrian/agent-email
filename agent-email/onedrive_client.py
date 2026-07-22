@@ -113,16 +113,29 @@ def upload_attachments(access_token: str, message: LoadedMessage, category: str)
         path = f"{ROOT_FOLDER_NAME}/{category_folder_name}/{filename}"
         url = f"{GRAPH_ROOT}/me/drive/root:/{urllib.parse.quote(path)}:/content"
 
-        response = requests.put(
-            url,
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": attachment.content_type,
-            },
-            data=attachment.content,
-        )
-        response.raise_for_status()
-        uploaded_ids.append(response.json()["id"])
+        try:
+            response = requests.put(
+                url,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": attachment.content_type,
+                },
+                data=attachment.content,
+            )
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise RuntimeError(
+                f"OneDrive-Upload fehlgeschlagen für '{attachment.filename}' "
+                f"(Kategorie: {category}): {getattr(e.response, "text", str(e)) if hasattr(e, "response") else str(e)}"
+            ) from e
+
+        try:
+            uploaded_ids.append(response.json()["id"])
+        except (KeyError, ValueError) as e:
+            raise RuntimeError(
+                f"Ungültige Antwort von Microsoft Graph für '{attachment.filename}': "
+                f"{response.text}"
+            ) from e
 
     return uploaded_ids
 
