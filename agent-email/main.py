@@ -10,13 +10,13 @@ from functools import partial
 import drive_client
 import onedrive_client
 from classifier import classify
-from config import AnthropicConfig, load_anthropic_config, load_storage_provider
+from config import AnthropicConfig, STORAGE_PROVIDERS, load_anthropic_config, load_storage_provider
 from imap_client import test_connection
 from message_loader import load_message
 
 COMMANDS = {"test", "listen", "poll", "storage-auth"}
 
-STORAGE_PROVIDERS = {
+STORAGE_PROVIDER_MODULES = {
     "google_drive": drive_client,
     "onedrive": onedrive_client,
 }
@@ -25,6 +25,14 @@ STORAGE_PROVIDER_LABELS = {
     "google_drive": "Google Drive",
     "onedrive": "OneDrive",
 }
+
+# Validate that all configured providers have corresponding modules
+_missing_modules = set(STORAGE_PROVIDERS) - set(STORAGE_PROVIDER_MODULES.keys())
+if _missing_modules:
+    raise RuntimeError(
+        f"Storage provider(s) {_missing_modules} configured in config.py "
+        f"but missing module implementation in main.py"
+    )
 
 # Mail-Betreffzeilen können Emojis/Sonderzeichen enthalten, die die
 # Windows-Konsole standardmäßig nicht darstellen kann (UnicodeEncodeError).
@@ -65,7 +73,7 @@ def main() -> None:
         sys.exit(0 if success else 1)
 
     storage_provider = load_storage_provider()
-    storage_module = STORAGE_PROVIDERS[storage_provider]
+    storage_module = STORAGE_PROVIDER_MODULES[storage_provider]
     storage_label = STORAGE_PROVIDER_LABELS[storage_provider]
 
     if command == "storage-auth":
