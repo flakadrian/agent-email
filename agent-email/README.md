@@ -1,8 +1,9 @@
-# E-Mail-Agent – IMAP-Anbindung + Klassifizierung + Google-Drive-Ablage
+# E-Mail-Agent – IMAP-Anbindung + Klassifizierung + Cloud-Ablage
 
 Dieser Teil kümmert sich um den IMAP-Zugriff (Verbinden, Login, auf neue Mails
 reagieren), das Laden und Klassifizieren neuer Mails über die Claude API
-sowie die Ablage der Anhänge in Google Drive.
+sowie die Ablage der Anhänge wahlweise in Google Drive oder Microsoft
+OneDrive (per `STORAGE_PROVIDER` konfigurierbar, siehe Abschnitt 5).
 
 ## 1. Setup
 
@@ -40,6 +41,10 @@ Dann `.env` mit einem Editor öffnen und ausfüllen:
   erstellen unter https://console.anthropic.com/settings/keys.
 - **ANTHROPIC_MODEL** – optional, Standard ist ein schnelles/günstiges Modell.
   Reicht für die Klassifizierung anhand der festen Kategorienliste völlig aus.
+- **STORAGE_PROVIDER** – `google_drive` (Standard) oder `onedrive`, legt fest
+  wohin Anhänge abgelegt werden (siehe Abschnitt 5).
+- **ONEDRIVE_CLIENT_ID**/**ONEDRIVE_TENANT** – nur nötig, wenn
+  `STORAGE_PROVIDER=onedrive` (siehe Abschnitt 5).
 
 Die `.env` bleibt lokal bei dir, sie wird über `.gitignore` von Git
 ausgeschlossen und landet nie in einem Repository.
@@ -83,30 +88,55 @@ UID 123: 'Stromrechnung Juli' -> Kategorie: Rechnungen/Zahlungen
 Bei Fehlern (z. B. API nicht erreichbar, unerwartete Antwort) fällt die
 Klassifizierung auf `Sonstiges` zurück statt abzustürzen.
 
-Mails **mit Anhang** werden zusätzlich in Google Drive abgelegt (Mails ohne
-Anhang bleiben nur klassifiziert, siehe Kategorienliste in `CLAUDE.md`):
+Mails **mit Anhang** werden zusätzlich in der konfigurierten Cloud-Ablage
+abgelegt (Mails ohne Anhang bleiben nur klassifiziert, siehe Kategorienliste
+in `CLAUDE.md`):
 
 ```
-  2 Anhang/Anhänge in Drive abgelegt (Rechnungen-Zahlungen)
+  2 Anhang/Anhänge in Google Drive abgelegt (Rechnungen-Zahlungen)
 ```
 
-## 5. Google-Drive-Ablage einrichten (einmalig)
+## 5. Cloud-Ablage einrichten (einmalig)
+
+Welcher Dienst genutzt wird, legt `STORAGE_PROVIDER` in der `.env` fest
+(`google_drive` oder `onedrive`). Jeweils einmalig einzurichten:
+
+### Google Drive
 
 Voraussetzung: ein Google-Cloud-Projekt mit aktivierter Drive API, OAuth-
 Consent-Screen (External, deine eigene Adresse als Testnutzer) und einer
 Desktop-OAuth-Client-ID. Die dabei heruntergeladene JSON-Datei legst du als
 `agent-email/credentials.json` ab (per `.gitignore` von Git ausgeschlossen).
 
-Danach einmalig:
+### OneDrive
+
+1. [portal.azure.com](https://portal.azure.com) → **Microsoft Entra ID →
+   App-Registrierungen → Neue Registrierung**
+2. Name z. B. `agent-email`, "Unterstützte Kontotypen": je nach Konto
+   persönliche + geschäftliche Konten (oder nur privat, falls du nur ein
+   outlook.com/hotmail-Konto nutzt)
+3. **Redirect-URI**: Plattform "Mobile- und Desktopanwendungen" auswählen,
+   URI `http://localhost` eintragen
+4. Nach dem Erstellen: **API-Berechtigungen → Berechtigung hinzufügen →
+   Microsoft Graph → Delegierte Berechtigungen → Files.ReadWrite** hinzufügen
+5. Die **Anwendungs-ID (Client)** von der Übersichtsseite kopieren und als
+   `ONEDRIVE_CLIENT_ID` in die `.env` eintragen — kein Client-Secret nötig,
+   da dies ein "Public Client" ist (Desktop-App-Flow)
+
+### Autorisieren
+
+Danach einmalig, unabhängig vom gewählten Anbieter:
 
 ```bash
-python main.py drive-auth
+python main.py storage-auth
 ```
 
-Das öffnet den Browser zur Google-Zustimmung und speichert den Zugriffstoken
-in `token.json` (ebenfalls von Git ausgeschlossen, wird bei Ablauf automatisch
-erneuert). Ab dann legen `listen`/`poll` Anhänge automatisch unter
-`Email-Ablage/<Kategorie>/` in deinem Drive ab (Pfadschema siehe `CLAUDE.md`).
+Das öffnet den Browser zur Zustimmung und speichert den Zugriffstoken lokal
+(`token.json` für Google Drive, `onedrive_token_cache.json` für OneDrive —
+beide von Git ausgeschlossen, werden bei Ablauf automatisch erneuert). Ab
+dann legen `listen`/`poll` Anhänge automatisch unter
+`Email-Ablage/<Kategorie>/` im gewählten Dienst ab (Pfadschema siehe
+`CLAUDE.md`).
 
 ## Tests
 

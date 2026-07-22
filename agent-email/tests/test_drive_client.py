@@ -101,5 +101,5 @@ def test_upload_attachments_keeps_original_filenames_distinct(mock_find_or_creat
 def test_get_service_raises_clear_error_when_token_missing(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
-    with pytest.raises(RuntimeError, match="drive-auth"):
+    with pytest.raises(RuntimeError, match="storage-auth"):
         get_service()
