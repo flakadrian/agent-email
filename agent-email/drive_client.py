@@ -9,6 +9,7 @@ get_service() liest nur den bereits erteilten, gespeicherten Token.
 """
 
 import os
+from typing import Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -35,7 +36,7 @@ def run_auth_flow() -> None:
         f.write(creds.to_json())
 
 
-def get_service():
+def get_service() -> Any:
     """Baut den Drive-Service aus dem gespeicherten Token auf (kein Login-Flow)."""
     if not os.path.exists(TOKEN_PATH):
         raise RuntimeError(
@@ -56,7 +57,7 @@ def _escape_query_value(value: str) -> str:
     return value.replace("\\", "\\\\").replace("'", "\\'")
 
 
-def _find_or_create_folder(service, name: str, parent_id: str | None = None) -> str:
+def _find_or_create_folder(service: Any, name: str, parent_id: str | None = None) -> str:
     query = f"name = '{_escape_query_value(name)}' and mimeType = '{_FOLDER_MIME_TYPE}' and trashed = false"
     if parent_id:
         query += f" and '{parent_id}' in parents"
@@ -73,7 +74,7 @@ def _find_or_create_folder(service, name: str, parent_id: str | None = None) -> 
     return folder["id"]
 
 
-def upload_attachments(service, message: LoadedMessage, category: str) -> list[str]:
+def upload_attachments(service: Any, message: LoadedMessage, category: str) -> list[str]:
     """Lädt alle Anhänge einer Mail in den passenden Kategorie-Ordner hoch.
 
     Gibt die Drive-File-IDs der hochgeladenen Dateien zurück. Mails ohne

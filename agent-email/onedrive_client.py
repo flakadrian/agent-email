@@ -121,7 +121,20 @@ def upload_attachments(access_token: str, message: LoadedMessage, category: str)
             },
             data=attachment.content,
         )
-        response.raise_for_status()
-        uploaded_ids.append(response.json()["id"])
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as exc:
+            raise RuntimeError(
+                f"OneDrive-Upload fehlgeschlagen für '{attachment.filename}' "
+                f"(Kategorie: {category}): {response.text}"
+            ) from exc
+
+        try:
+            uploaded_ids.append(response.json()["id"])
+        except (KeyError, ValueError) as exc:
+            raise RuntimeError(
+                f"Ungültige Antwort von Microsoft Graph für '{attachment.filename}': "
+                f"{response.text}"
+            ) from exc
 
     return uploaded_ids
