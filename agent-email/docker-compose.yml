@@ -1,0 +1,11 @@
+services:
+  agent-email:
+    build: .
+    container_name: agent-email
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+      - ./token.json:/app/token.json
+      - ./onedrive_token_cache.json:/app/onedrive_token_cache.json
