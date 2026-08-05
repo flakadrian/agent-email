@@ -9,3 +9,16 @@ services:
       - ./credentials.json:/app/credentials.json:ro
       - ./token.json:/app/token.json
       - ./onedrive_token_cache.json:/app/onedrive_token_cache.json
+
+  # Nur nötig, wenn CLASSIFIER_PROVIDER=local in .env gesetzt ist.
+  # Nach dem ersten Start Modell laden:
+  #   docker exec -it ollama ollama pull qwen2.5:1.5b
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  ollama-data:

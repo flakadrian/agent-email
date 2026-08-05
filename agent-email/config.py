@@ -30,7 +30,14 @@ class OneDriveConfig:
     tenant: str
 
 
+@dataclass
+class LocalModelConfig:
+    host: str
+    model: str
+
+
 STORAGE_PROVIDERS = {"google_drive", "onedrive"}
+CLASSIFIER_PROVIDERS = {"anthropic", "local"}
 
 
 def _require(name: str) -> str:
@@ -76,3 +83,20 @@ def load_storage_provider() -> str:
             f"{', '.join(sorted(STORAGE_PROVIDERS))}."
         )
     return provider
+
+
+def load_classifier_provider() -> str:
+    provider = os.getenv("CLASSIFIER_PROVIDER", "anthropic").strip().lower()
+    if provider not in CLASSIFIER_PROVIDERS:
+        raise RuntimeError(
+            f"Unbekannter CLASSIFIER_PROVIDER '{provider}'. Erlaubt: "
+            f"{', '.join(sorted(CLASSIFIER_PROVIDERS))}."
+        )
+    return provider
+
+
+def load_local_model_config() -> LocalModelConfig:
+    return LocalModelConfig(
+        host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
+        model=_require("OLLAMA_MODEL"),
+    )

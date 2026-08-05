@@ -7,10 +7,18 @@ strukturiert in Google Drive oder OneDrive ab (siehe README).
 import sys
 from functools import partial
 
+import classifier
 import drive_client
+import local_classifier
 import onedrive_client
-from classifier import classify
-from config import AnthropicConfig, STORAGE_PROVIDERS, load_anthropic_config, load_storage_provider
+from config import (
+    CLASSIFIER_PROVIDERS,
+    STORAGE_PROVIDERS,
+    load_anthropic_config,
+    load_classifier_provider,
+    load_local_model_config,
+    load_storage_provider,
+)
 from imap_client import test_connection
 from message_loader import load_message
 
@@ -26,11 +34,28 @@ STORAGE_PROVIDER_LABELS = {
     "onedrive": "OneDrive",
 }
 
+CLASSIFIER_PROVIDER_MODULES = {
+    "anthropic": classifier,
+    "local": local_classifier,
+}
+
+CLASSIFIER_CONFIG_LOADERS = {
+    "anthropic": load_anthropic_config,
+    "local": load_local_model_config,
+}
+
 _missing_modules = STORAGE_PROVIDERS - STORAGE_PROVIDER_MODULES.keys()
 if _missing_modules:
     raise RuntimeError(
         f"Storage-Provider {sorted(_missing_modules)} sind in config.py als "
         f"gültig gelistet, aber main.py fehlt die zugehörige Modul-Implementierung."
+    )
+
+_missing_classifier_modules = CLASSIFIER_PROVIDERS - CLASSIFIER_PROVIDER_MODULES.keys()
+if _missing_classifier_modules:
+    raise RuntimeError(
+        f"Classifier-Provider {sorted(_missing_classifier_modules)} sind in config.py "
+        f"als gültig gelistet, aber main.py fehlt die zugehörige Modul-Implementierung."
     )
 
 # Mail-Betreffzeilen können Emojis/Sonderzeichen enthalten, die die
@@ -40,7 +65,8 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def handle_message(
-    anthropic_config: AnthropicConfig,
+    classifier_module,
+    classifier_config,
     storage_module,
     storage_label: str,
     storage_service,
@@ -48,7 +74,7 @@ def handle_message(
     uid: int,
 ) -> None:
     message = load_message(client, uid)
-    category = classify(message, anthropic_config)
+    category = classifier_module.classify(message, classifier_config)
     print(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
 
     if message.attachments:
@@ -79,29 +105,27 @@ def main() -> None:
         storage_module.run_auth_flow()
         print(f"{storage_label}-Autorisierung abgeschlossen.")
 
-    if command == "listen":
-        from imap_client import idle_listen
-        idle_listen(
-            partial(
-                handle_message,
-                load_anthropic_config(),
-                storage_module,
-                storage_label,
-                storage_module.get_service(),
-            )
+    if command in ("listen", "poll"):
+        classifier_provider = load_classifier_provider()
+        classifier_module = CLASSIFIER_PROVIDER_MODULES[classifier_provider]
+        classifier_config = CLASSIFIER_CONFIG_LOADERS[classifier_provider]()
+
+        handler = partial(
+            handle_message,
+            classifier_module,
+            classifier_config,
+            storage_module,
+            storage_label,
+            storage_module.get_service(),
         )
 
-    if command == "poll":
-        from imap_client import poll_new_messages
-        poll_new_messages(
-            partial(
-                handle_message,
-                load_anthropic_config(),
-                storage_module,
-                storage_label,
-                storage_module.get_service(),
-            )
-        )
+        if command == "listen":
+            from imap_client import idle_listen
+            idle_listen(handler)
+
+        if command == "poll":
+            from imap_client import poll_new_messages
+            poll_new_messages(handler)
 
 
 if __name__ == "__main__":
