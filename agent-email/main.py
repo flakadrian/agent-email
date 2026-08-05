@@ -10,6 +10,7 @@ from functools import partial
 import classifier
 import drive_client
 import local_classifier
+import local_storage
 import onedrive_client
 from config import (
     CLASSIFIER_PROVIDERS,
@@ -27,11 +28,13 @@ COMMANDS = {"test", "listen", "poll", "storage-auth"}
 STORAGE_PROVIDER_MODULES = {
     "google_drive": drive_client,
     "onedrive": onedrive_client,
+    "local": local_storage,
 }
 
 STORAGE_PROVIDER_LABELS = {
     "google_drive": "Google Drive",
     "onedrive": "OneDrive",
+    "local": "lokalem Pfad",
 }
 
 CLASSIFIER_PROVIDER_MODULES = {

@@ -36,7 +36,12 @@ class LocalModelConfig:
     model: str
 
 
-STORAGE_PROVIDERS = {"google_drive", "onedrive"}
+@dataclass
+class LocalStorageConfig:
+    path: str
+
+
+STORAGE_PROVIDERS = {"google_drive", "onedrive", "local"}
 CLASSIFIER_PROVIDERS = {"anthropic", "local"}
 
 
@@ -100,3 +105,7 @@ def load_local_model_config() -> LocalModelConfig:
         host=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
         model=_require("OLLAMA_MODEL"),
     )
+
+
+def load_local_storage_config() -> LocalStorageConfig:
+    return LocalStorageConfig(path=_require("LOCAL_STORAGE_PATH"))

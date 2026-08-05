@@ -9,6 +9,10 @@ services:
       - ./credentials.json:/app/credentials.json:ro
       - ./token.json:/app/token.json
       - ./onedrive_token_cache.json:/app/onedrive_token_cache.json
+      # Nur nötig, wenn STORAGE_PROVIDER=local in .env gesetzt ist. Linker
+      # Teil an eine echte NAS-Freigabe anpassen, rechter Teil muss zu
+      # LOCAL_STORAGE_PATH in .env passen.
+      - /volume1/Email-Ablage:/data
 
   # Nur nötig, wenn CLASSIFIER_PROVIDER=local in .env gesetzt ist.
   # Nach dem ersten Start Modell laden:
