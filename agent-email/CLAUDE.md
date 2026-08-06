@@ -5,23 +5,25 @@ Jeder Agent ist eigenständig, hat eigene Werkzeuge/Rechte und eigenen Kontext.
 Neue Fähigkeiten = neuer Agent mit eigener Konfiguration, nie ein Sonderfall
 im Orchestrator-Code.
 
-Vollständigen Fahrplan mit allen Phasen und Entscheidungen siehe
-`fahrplan-persoenlicher-assistent.md`.
-
 ## Aktueller Stand
 
 - Phase 0 abgeschlossen (Use Case, Tech-Stack, Interface-Vertrag definiert)
-- Erster Agent fertig: `agent-email/` – IMAP-Anbindung, Klassifizierung und
-  Cloud-Ablage (Google Drive oder OneDrive, konfigurierbar) stehen
+- Erster Agent fertig: `agent-email/` – IMAP-Anbindung, Klassifizierung
+  (Claude API oder lokal via Ollama) und Ablage (Google Drive, OneDrive
+  oder lokaler Dateisystempfad, jeweils konfigurierbar) stehen; läuft
+  wahlweise direkt mit Python oder als Docker-Container (z. B. dauerhaft
+  auf einem NAS)
 - Orchestrator selbst existiert noch nicht (kommt in Phase 1)
 
 ## Tech-Stack agent-email
 
 - Python, IMAP über `imapclient` (IDLE bevorzugt, Polling als Fallback)
-- Klassifizierung über die Claude API
-- Ablage wahlweise über Google Drive API oder Microsoft Graph API
-  (OneDrive), Auswahl per `STORAGE_PROVIDER`
-- Läuft als eigenständiger Dienst, nicht als Teil einer Chat-Session
+- Klassifizierung über die Claude API oder ein lokales Modell via Ollama,
+  Auswahl per `CLASSIFIER_PROVIDER`
+- Ablage wahlweise über Google Drive API, Microsoft Graph API (OneDrive)
+  oder einen lokalen Dateisystempfad, Auswahl per `STORAGE_PROVIDER`
+- Läuft als eigenständiger Dienst (lokal oder als Docker-Container), nicht
+  als Teil einer Chat-Session
 
 ## Befehle
 
@@ -40,12 +42,19 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE
 - `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
+- `agent-email/local_classifier.py` – Klassifizierung über ein lokales
+  Ollama-Modell (gleiche Kategorienliste/Prompt wie classifier.py)
 - `agent-email/file_naming.py` – gemeinsame Dateinamens-/Datums-Hilfsfunktionen
-  für die Cloud-Ablage
+  für die Ablage
 - `agent-email/drive_client.py` – OAuth-Flow + Ablage der Anhänge in Google Drive
 - `agent-email/onedrive_client.py` – OAuth-Flow + Ablage der Anhänge in OneDrive
-- `agent-email/main.py` – Einstiegspunkt/CLI, wählt Storage-Provider per
-  `STORAGE_PROVIDER`
+- `agent-email/local_storage.py` – Ablage der Anhänge auf einem lokalen
+  Dateisystempfad, kein OAuth nötig
+- `agent-email/main.py` – Einstiegspunkt/CLI, wählt Classifier-/Storage-
+  Provider per `CLASSIFIER_PROVIDER`/`STORAGE_PROVIDER`
+- `agent-email/Dockerfile`/`agent-email/docker-compose.yml` – Container-Image
+  und Compose-Setup für dauerhaften Betrieb (z. B. auf einem NAS), optional
+  inkl. `ollama`-Service für die lokale Klassifizierung
 
 ## Regeln
 
@@ -60,8 +69,8 @@ python main.py listen  # auf neue Mails warten (IDLE)
 
 ## Nächster Schritt
 
-`agent-email` ist damit abgeschlossen (IMAP, Klassifizierung, Drive-Ablage).
-Nächster Baustein laut Fahrplan: der Orchestrator selbst (Phase 1) sowie
+`agent-email` ist damit abgeschlossen (IMAP, Klassifizierung, Ablage,
+Docker-Betrieb). Nächster Baustein: der Orchestrator selbst (Phase 1) sowie
 weitere Einzel-Agenten – jeweils mit eigenem Namen, Zuständigkeits-
 Beschreibung, erlaubten Werkzeugen und definiertem Ein-/Ausgabeformat (siehe
 Regeln oben).
@@ -76,11 +85,12 @@ Regeln oben).
 6. Privat
 7. Sonstiges (Fallback für alles Unklare)
 
-## Anhang: Pfadschema Cloud-Ablage (Stand 2026-07-17, erweitert 2026-07-17)
+## Anhang: Pfadschema Ablage (Stand 2026-07-17, erweitert 2026-08-06)
 
-Flach nach Kategorie, kein Jahresordner, identisch für Google Drive und
-OneDrive. Nur Mails **mit Anhang** werden abgelegt; der Original-Dateiname
-bleibt Teil des Dateinamens (wichtig bei mehreren Anhängen pro Mail):
+Flach nach Kategorie, kein Jahresordner, identisch für Google Drive,
+OneDrive und lokalen Pfad. Nur Mails **mit Anhang** werden abgelegt; der
+Original-Dateiname bleibt Teil des Dateinamens (wichtig bei mehreren
+Anhängen pro Mail):
 
 ```
 Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
@@ -88,5 +98,5 @@ Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
 
 Beispiel: `Email-Ablage/Rechnungen-Zahlungen/2026-07-17_Stromrechnung Juli_rechnung.pdf`
 
-Welcher Dienst genutzt wird, legt `STORAGE_PROVIDER` (`google_drive` oder
-`onedrive`) in der `.env` fest — nicht beide gleichzeitig.
+Welches Ziel genutzt wird, legt `STORAGE_PROVIDER` (`google_drive`,
+`onedrive` oder `local`) in der `.env` fest — immer nur eins gleichzeitig.

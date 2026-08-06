@@ -4,7 +4,7 @@ Pfadschema (siehe CLAUDE.md-Anhang):
     /Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
 
 Der OAuth-Consent (run_auth_flow) ist ein einmaliger, ausschließlich vom
-Nutzer selbst auszuführender Schritt (siehe main.py "drive-auth"-Befehl) -
+Nutzer selbst auszuführender Schritt (siehe main.py "storage-auth"-Befehl) -
 get_service() liest nur den bereits erteilten, gespeicherten Token.
 """
 

@@ -1,7 +1,8 @@
 """Einstiegspunkt für den E-Mail-Agenten.
 
-Lädt neue Mails, klassifiziert sie über die Claude API und legt Anhänge
-strukturiert in Google Drive oder OneDrive ab (siehe README).
+Lädt neue Mails, klassifiziert sie (Claude API oder lokales Ollama-Modell,
+per CLASSIFIER_PROVIDER) und legt Anhänge strukturiert ab (Google Drive,
+OneDrive oder lokaler Pfad, per STORAGE_PROVIDER) - siehe README.
 """
 
 import sys

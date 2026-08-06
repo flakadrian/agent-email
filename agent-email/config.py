@@ -1,4 +1,4 @@
-"""Lädt die IMAP-Konfiguration aus der .env-Datei und validiert sie."""
+"""Lädt die Konfiguration (IMAP, Klassifizierung, Ablage) aus der .env-Datei und validiert sie."""
 
 import os
 from dataclasses import dataclass

@@ -1,4 +1,4 @@
-"""Gemeinsame Dateinamens-Hilfsfunktionen für die Cloud-Ablage (Google Drive, OneDrive).
+"""Gemeinsame Dateinamens-Hilfsfunktionen für die Ablage (Google Drive, OneDrive, lokaler Pfad).
 
 Pfadschema (siehe CLAUDE.md-Anhang):
     Email-Ablage/<Kategorie>/<Datum>_<Betreff>_<Original-Dateiname>
