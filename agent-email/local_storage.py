@@ -7,6 +7,7 @@ Kein OAuth nötig; run_auth_flow() legt lediglich den konfigurierten Pfad an,
 falls er noch nicht existiert.
 """
 
+import os
 from pathlib import Path
 
 from config import load_local_storage_config
@@ -31,6 +32,16 @@ def get_service() -> Path:
         raise RuntimeError(
             f"Lokaler Ablagepfad '{config.path}' ist nicht beschreibbar: {exc}"
         ) from exc
+
+    # Unterscheidet einen echten Bind-Mount (Schreibzugriffe landen auf dem
+    # NAS-Host) von einem normalen Ordner innerhalb der Container-eigenen,
+    # nicht persistenten Dateisystemebene (z.B. bei fehlerhaft konfiguriertem
+    # Docker-Volume) - beides sieht für das Programm selbst identisch aus.
+    print(
+        f"[local_storage] Basis-Pfad: {root} "
+        f"(ist Mountpoint: {os.path.ismount(root)}), "
+        f"vorhandener Inhalt: {[p.name for p in root.iterdir()]}"
+    )
     return root
 
 
@@ -55,6 +66,12 @@ def upload_attachments(root: Path, message: LoadedMessage, category: str) -> lis
         filename = f"{date_prefix}_{subject_slug}_{attachment.filename}"
         file_path = target_dir / filename
         file_path.write_bytes(attachment.content)
+
+        written_size = file_path.stat().st_size
+        print(
+            f"[local_storage] geschrieben: {file_path} "
+            f"({written_size} Bytes, erwartet {len(attachment.content)} Bytes)"
+        )
         written_paths.append(str(file_path))
 
     return written_paths

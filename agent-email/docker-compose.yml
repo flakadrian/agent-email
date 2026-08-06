@@ -11,10 +11,13 @@ services:
       - ./credentials.json:/app/credentials.json:ro
       - ./token.json:/app/token.json
       - ./onedrive_token_cache.json:/app/onedrive_token_cache.json
-      # Nur nötig, wenn STORAGE_PROVIDER=local in .env gesetzt ist. Linker
-      # Teil an eine echte NAS-Freigabe anpassen, rechter Teil muss zu
-      # LOCAL_STORAGE_PATH in .env passen.
-      - /volume1/Email-Ablage:/data
+      # Nur nötig, wenn STORAGE_PROVIDER=local in .env gesetzt ist.
+      # Format ist immer <echter NAS-Pfad>:<Pfad innerhalb des Containers>.
+      # Linke Seite (NAS-Pfad) an eure echte Freigabe anpassen. Rechte Seite
+      # ("/data") ist der Wert, der in LOCAL_STORAGE_PATH in .env gehört -
+      # dort NIEMALS die linke (NAS-)Seite eintragen, siehe Kommentar in
+      # .env.example.
+      - /volume1/Daten:/data
 
   # Nur nötig, wenn CLASSIFIER_PROVIDER=local in .env gesetzt ist.
   # Nach dem ersten Start Modell laden:

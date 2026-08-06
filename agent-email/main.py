@@ -82,7 +82,9 @@ def handle_message(
 
     if message.attachments:
         uploaded_ids = storage_module.upload_attachments(storage_service, message, category)
-        print(f"  {len(uploaded_ids)} Anhang/Anhänge in {storage_label} abgelegt ({category.replace('/', '-')})")
+        print(f"  {len(uploaded_ids)} Anhang/Anhänge in {storage_label} abgelegt ({category.replace('/', '-')}):")
+        for item in uploaded_ids:
+            print(f"    {item}")
 
 
 def main() -> None:
@@ -113,13 +115,16 @@ def main() -> None:
         classifier_module = CLASSIFIER_PROVIDER_MODULES[classifier_provider]
         classifier_config = CLASSIFIER_CONFIG_LOADERS[classifier_provider]()
 
+        storage_service = storage_module.get_service()
+        print(f"Speicherziel ({storage_label}): {storage_service}")
+
         handler = partial(
             handle_message,
             classifier_module,
             classifier_config,
             storage_module,
             storage_label,
-            storage_module.get_service(),
+            storage_service,
         )
 
         if command == "listen":
