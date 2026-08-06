@@ -171,6 +171,12 @@ Docker-Betrieb den Container-internen Pfad, siehe Warnung in
 `.env.example` und Abschnitt 7). Der Ordner wird beim Start automatisch
 angelegt, falls er noch nicht existiert.
 
+**Im Docker-Betrieb:** Immer einen eigenen, dedizierten Ordner/Freigabe
+verwenden, nie eine bestehende, umfassendere Freigabe mit anderen
+(privaten) Dateien mounten - der Container läuft als root und hat vollen
+Zugriff auf alles, was gemountet wird; das lässt sich nicht über
+Datei-Berechtigungen einschränken. Siehe Kommentar in `docker-compose.yml`.
+
 Ab dann legen `listen`/`poll` Anhänge automatisch unter
 `Email-Ablage/<Kategorie>/` im gewählten Ziel ab (Pfadschema siehe
 `CLAUDE.md`).
@@ -216,7 +222,9 @@ Für dauerhaften Betrieb ohne offene SSH-Sitzung, z. B. auf einem Synology-NAS
    der `agent-email`-Volumes anpassen (linke Seite = echter Pfad auf dem
    Host, rechte Seite muss zu `LOCAL_STORAGE_PATH` in `.env` passen – siehe
    ausführliche Warnung dazu in `.env.example`, das war in der Praxis die
-   häufigste Fehlerquelle).
+   häufigste Fehlerquelle). **Immer einen eigenen, dedizierten Freigabeordner
+   verwenden** – der Container läuft als root und hätte sonst vollen Zugriff
+   auf alles im gemounteten Ordner, auch auf fremde/private Dateien.
 3. Falls `CLASSIFIER_PROVIDER=local`: Der optionale `ollama`-Service in
    `docker-compose.yml` startet mit; Modell einmalig im laufenden Container
    laden:

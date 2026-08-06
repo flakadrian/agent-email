@@ -17,7 +17,15 @@ services:
       # ("/data") ist der Wert, der in LOCAL_STORAGE_PATH in .env gehört -
       # dort NIEMALS die linke (NAS-)Seite eintragen, siehe Kommentar in
       # .env.example.
-      - /volume1/Daten:/data
+      #
+      # WICHTIG: Immer einen eigenen, dedizierten Freigabeordner mounten,
+      # NIEMALS eine bestehende, umfassendere Freigabe (z.B. ein allgemeines
+      # "Daten"-Verzeichnis mit privaten/sonstigen Dateien) - der Container
+      # läuft aktuell als root und hat vollen Lese-/Schreib-/Löschzugriff
+      # auf ALLES, was hier gemountet wird. Ein zu weit gefasster Mount kann
+      # nicht durch Datei-/Ordner-Berechtigungen eingeschränkt werden, da
+      # root diese ohnehin umgeht.
+      - /volume1/Agent:/data
 
   # Nur nötig, wenn CLASSIFIER_PROVIDER=local in .env gesetzt ist.
   # Nach dem ersten Start Modell laden:

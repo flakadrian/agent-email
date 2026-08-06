@@ -10,6 +10,13 @@ Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
 
 ## 2026-08-06 – Entwicklungsprozess gehärtet
 
+- **Sicherheitsfix:** Bind-Mount für `STORAGE_PROVIDER=local` band versehentlich
+  eine bestehende, umfassende persönliche Freigabe (`/volume1/Daten`) statt
+  eines dedizierten Ordners ein – der (als root laufende) Container hatte
+  dadurch vollen Zugriff auf private Dateien statt nur auf die E-Mail-Ablage.
+  Auf einen eigenen Freigabeordner (`/volume1/Agent`) umgestellt, Warnung
+  dazu in `docker-compose.yml`/`.env.example`/README ergänzt. Entdeckt über
+  die neue Diagnose-Logausgabe (Verzeichnisinhalt beim Start).
 - CI-Pipeline (GitHub Actions): automatisierte Tests + Linting bei jedem
   Push/PR, inkl. Docker-Build-Check ([#12](https://github.com/flakadrian/agent-email/pull/12))
 - Dependencies auf exakte Versionen gepinnt statt offener `>=`-Constraints,
