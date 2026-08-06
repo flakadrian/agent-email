@@ -1,14 +1,14 @@
-imapclient>=3.0
-python-dotenv>=1.0
-anthropic>=0.40
-google-api-python-client>=2.100
-google-auth-httplib2>=0.2
-google-auth-oauthlib>=1.2
-msal>=1.28
-requests>=2.31
+imapclient==3.1.0
+python-dotenv==1.2.2
+anthropic==0.120.2
+google-api-python-client==2.198.0
+google-auth-httplib2==0.4.0
+google-auth-oauthlib==1.4.0
+msal==1.37.0
+requests==2.34.2
 
 # Nutzt die Betriebssystem-Zertifikatsablage statt certifi. Auf Firmenrechnern
 # mit SSL-Inspektionsproxy schlagen sonst alle HTTPS-Calls (Claude/Google-APIs)
 # mit "CERTIFICATE_VERIFY_FAILED" fehl, da das firmeneigene Root-Zertifikat
 # nicht im certifi-Bundle von Python liegt.
-pip-system-certs>=4.0
+pip-system-certs==5.3
