@@ -5,6 +5,7 @@ per CLASSIFIER_PROVIDER) und legt Anhänge strukturiert ab (Google Drive,
 OneDrive oder lokaler Pfad, per STORAGE_PROVIDER) - siehe README.
 """
 
+import logging
 import sys
 from functools import partial
 
@@ -67,6 +68,16 @@ if _missing_classifier_modules:
 # UTF-8 mit Ersatzzeichen statt Absturz.
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+# Auf stdout statt dem Logging-Standard stderr, damit Container Manager/
+# Docker-Log-Viewer weiterhin alles im selben Protokoll-Stream zeigen wie
+# bisher mit print().
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
+
 
 def handle_message(
     classifier_module,
@@ -79,13 +90,14 @@ def handle_message(
 ) -> None:
     message = load_message(client, uid)
     category = classifier_module.classify(message, classifier_config)
-    print(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
+    logger.info(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
 
     if message.attachments:
         uploaded_ids = storage_module.upload_attachments(storage_service, message, category)
-        print(f"  {len(uploaded_ids)} Anhang/Anhänge in {storage_label} abgelegt ({category.replace('/', '-')}):")
-        for item in uploaded_ids:
-            print(f"    {item}")
+        logger.info(
+            f"{len(uploaded_ids)} Anhang/Anhänge in {storage_label} abgelegt "
+            f"({category.replace('/', '-')}): {uploaded_ids}"
+        )
 
 
 def main() -> None:
@@ -109,7 +121,7 @@ def main() -> None:
 
     if command == "storage-auth":
         storage_module.run_auth_flow()
-        print(f"{storage_label}-Autorisierung abgeschlossen.")
+        logger.info(f"{storage_label}-Autorisierung abgeschlossen.")
 
     if command in ("listen", "poll"):
         classifier_provider = load_classifier_provider()
@@ -117,7 +129,7 @@ def main() -> None:
         classifier_config = CLASSIFIER_CONFIG_LOADERS[classifier_provider]()
 
         storage_service = storage_module.get_service()
-        print(f"Speicherziel ({storage_label}): {storage_service}")
+        logger.info(f"Speicherziel ({storage_label}): {storage_service}")
 
         handler = partial(
             handle_message,

@@ -31,32 +31,33 @@ def test_connect_logs_in_and_selects_folder(mock_imap_cls):
 
 @patch("imap_client.connect")
 @patch("imap_client.load_config")
-def test_connection_reports_success(mock_load_config, mock_connect, capsys):
+def test_connection_reports_success(mock_load_config, mock_connect, caplog):
     mock_load_config.return_value = _config()
     mock_client = MagicMock()
     mock_client.list_folders.return_value = [(None, b"/", "INBOX"), (None, b"/", "Archive")]
     mock_client.folder_status.return_value = {b"MESSAGES": 42}
     mock_connect.return_value = mock_client
 
-    result = check_connection()
+    with caplog.at_level("INFO"):
+        result = check_connection()
 
     assert result is True
     mock_client.logout.assert_called_once()
-    out = capsys.readouterr().out
-    assert "Verbindung erfolgreich zu imap.beispiel.de als me@beispiel.de" in out
-    assert "42 Nachrichten" in out
+    assert "Verbindung erfolgreich zu imap.beispiel.de als me@beispiel.de" in caplog.text
+    assert "42 Nachrichten" in caplog.text
 
 
 @patch("imap_client.connect")
 @patch("imap_client.load_config")
-def test_connection_reports_failure_on_connect_error(mock_load_config, mock_connect, capsys):
+def test_connection_reports_failure_on_connect_error(mock_load_config, mock_connect, caplog):
     mock_load_config.return_value = _config()
     mock_connect.side_effect = RuntimeError("Login fehlgeschlagen")
 
-    result = check_connection()
+    with caplog.at_level("INFO"):
+        result = check_connection()
 
     assert result is False
-    assert "Verbindung fehlgeschlagen" in capsys.readouterr().out
+    assert "Verbindung fehlgeschlagen" in caplog.text
 
 
 @patch("imap_client.time.sleep")

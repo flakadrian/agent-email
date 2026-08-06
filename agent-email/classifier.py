@@ -5,10 +5,14 @@ wird per erzwungenem Tool-Call durchgesetzt, damit Claude niemals eine
 Kategorie außerhalb der Liste zurückgibt.
 """
 
+import logging
+
 import anthropic
 
 from config import AnthropicConfig
 from message_loader import LoadedMessage
+
+logger = logging.getLogger(__name__)
 
 CATEGORIES = [
     "Rechnungen/Zahlungen",
@@ -70,7 +74,7 @@ def classify(message: LoadedMessage, config: AnthropicConfig) -> str:
             messages=[{"role": "user", "content": _build_prompt(message)}],
         )
     except Exception as exc:
-        print(f"Klassifizierung fehlgeschlagen, verwende Fallback '{FALLBACK_CATEGORY}': {exc}")
+        logger.warning(f"Klassifizierung fehlgeschlagen, verwende Fallback '{FALLBACK_CATEGORY}': {exc}")
         return FALLBACK_CATEGORY
 
     for block in response.content:
