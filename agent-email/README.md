@@ -72,12 +72,12 @@ ausgeschlossen und landet nie in einem Repository.
 python main.py test
 ```
 
-Erwartete Ausgabe bei Erfolg:
+Erwartete Ausgabe bei Erfolg (Log-Format: Zeitstempel, Level, Modul, Nachricht):
 
 ```
-Verbindung erfolgreich zu imap.deinanbieter.de als deine-adresse@beispiel.de
-Ordner 'INBOX' enthält 42 Nachrichten
-Verfügbare Ordner: [...]
+2026-07-17 10:00:00,123 INFO imap_client: Verbindung erfolgreich zu imap.deinanbieter.de als deine-adresse@beispiel.de
+2026-07-17 10:00:00,124 INFO imap_client: Ordner 'INBOX' enthält 42 Nachrichten
+2026-07-17 10:00:00,124 INFO imap_client: Verfügbare Ordner: [...]
 ```
 
 Typische Fehlerquellen, falls es nicht klappt:
@@ -94,28 +94,34 @@ python main.py listen   # bevorzugt: IMAP IDLE, reagiert nahezu sofort
 python main.py poll     # Fallback, falls der Anbieter kein IDLE unterstützt
 ```
 
-Beim Start wird das konfigurierte Ablageziel einmal ausgegeben (z. B.
-`Speicherziel (lokalem Pfad): /data`). Bei neuen Mails wird der
-Nachrichteninhalt inkl. Anhänge geladen (siehe `message_loader.py`) und über
-den konfigurierten `CLASSIFIER_PROVIDER` einer der festen Kategorien
-zugeordnet (siehe `classifier.py`/`local_classifier.py`, Kategorienliste in
-`CLAUDE.md`). Beispiel:
+Alle Ausgaben laufen über das `logging`-Modul (siehe `main.py`), auf stdout,
+im Format `<Zeitstempel> <Level> <Modul>: <Nachricht>` - erleichtert das
+Filtern/Grep im Container-Protokoll. Beim Start wird das konfigurierte
+Ablageziel einmal ausgegeben:
 
 ```
-UID 123: 'Stromrechnung Juli' -> Kategorie: Rechnungen/Zahlungen
+2026-07-17 10:00:00,000 INFO main: Speicherziel (lokalem Pfad): /data
+```
+
+Bei neuen Mails wird der Nachrichteninhalt inkl. Anhänge geladen (siehe
+`message_loader.py`) und über den konfigurierten `CLASSIFIER_PROVIDER` einer
+der festen Kategorien zugeordnet (siehe `classifier.py`/`local_classifier.py`,
+Kategorienliste in `CLAUDE.md`). Beispiel:
+
+```
+2026-07-17 10:00:05,000 INFO main: UID 123: 'Stromrechnung Juli' -> Kategorie: Rechnungen/Zahlungen
 ```
 
 Bei Fehlern (z. B. API/Ollama nicht erreichbar, Timeout, unerwartete
-Antwort) fällt die Klassifizierung auf `Sonstiges` zurück statt abzustürzen.
+Antwort) fällt die Klassifizierung auf `Sonstiges` zurück statt abzustürzen
+(Log-Level `WARNING`).
 
 Mails **mit Anhang** werden zusätzlich in der konfigurierten Ablage
 abgelegt (Mails ohne Anhang bleiben nur klassifiziert, siehe Kategorienliste
 in `CLAUDE.md`), inkl. der geschriebenen Pfade/IDs:
 
 ```
-  2 Anhang/Anhänge in Google Drive abgelegt (Rechnungen-Zahlungen):
-    <file-id-1>
-    <file-id-2>
+2026-07-17 10:00:05,500 INFO main: 2 Anhang/Anhänge in Google Drive abgelegt (Rechnungen-Zahlungen): ['<file-id-1>', '<file-id-2>']
 ```
 
 ## 5. Ablage einrichten (einmalig)
