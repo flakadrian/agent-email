@@ -1,0 +1,98 @@
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from config import ImapConfig
+from imap_client import connect, idle_listen, poll_new_messages
+from imap_client import test_connection as check_connection
+
+
+class _StopLoop(Exception):
+    """Bricht die Endlosschleife von poll_new_messages/idle_listen kontrolliert ab."""
+
+
+def _config() -> ImapConfig:
+    return ImapConfig(
+        host="imap.beispiel.de", port=993, user="me@beispiel.de", password="pw", use_ssl=True, folder="INBOX"
+    )
+
+
+@patch("imap_client.IMAPClient")
+def test_connect_logs_in_and_selects_folder(mock_imap_cls):
+    mock_client = mock_imap_cls.return_value
+
+    client = connect(_config())
+
+    mock_imap_cls.assert_called_once_with("imap.beispiel.de", port=993, ssl=True)
+    mock_client.login.assert_called_once_with("me@beispiel.de", "pw")
+    mock_client.select_folder.assert_called_once_with("INBOX")
+    assert client is mock_client
+
+
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_connection_reports_success(mock_load_config, mock_connect, capsys):
+    mock_load_config.return_value = _config()
+    mock_client = MagicMock()
+    mock_client.list_folders.return_value = [(None, b"/", "INBOX"), (None, b"/", "Archive")]
+    mock_client.folder_status.return_value = {b"MESSAGES": 42}
+    mock_connect.return_value = mock_client
+
+    result = check_connection()
+
+    assert result is True
+    mock_client.logout.assert_called_once()
+    out = capsys.readouterr().out
+    assert "Verbindung erfolgreich zu imap.beispiel.de als me@beispiel.de" in out
+    assert "42 Nachrichten" in out
+
+
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_connection_reports_failure_on_connect_error(mock_load_config, mock_connect, capsys):
+    mock_load_config.return_value = _config()
+    mock_connect.side_effect = RuntimeError("Login fehlgeschlagen")
+
+    result = check_connection()
+
+    assert result is False
+    assert "Verbindung fehlgeschlagen" in capsys.readouterr().out
+
+
+@patch("imap_client.time.sleep")
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_poll_new_messages_calls_callback_for_new_uids(mock_load_config, mock_connect, mock_sleep):
+    mock_load_config.return_value = _config()
+    client = MagicMock()
+    client.search.side_effect = [{1, 2}, {1, 2, 3}]
+    mock_connect.return_value = client
+    mock_sleep.side_effect = [None, _StopLoop()]
+
+    on_message = MagicMock()
+
+    with pytest.raises(_StopLoop):
+        poll_new_messages(on_message, interval_seconds=0)
+
+    on_message.assert_called_once_with(client, 3)
+    client.logout.assert_called_once()
+
+
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_idle_listen_calls_callback_for_new_uids(mock_load_config, mock_connect):
+    mock_load_config.return_value = _config()
+    client = MagicMock()
+    client.search.side_effect = [{1, 2}, {1, 2, 3}]
+    client.idle_check.side_effect = [None, _StopLoop()]
+    mock_connect.return_value = client
+
+    on_message = MagicMock()
+
+    with pytest.raises(_StopLoop):
+        idle_listen(on_message, idle_timeout_seconds=1)
+
+    on_message.assert_called_once_with(client, 3)
+    assert client.idle.call_count == 2
+    assert client.idle_done.call_count == 2
+    client.logout.assert_called_once()
