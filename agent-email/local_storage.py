@@ -7,12 +7,15 @@ Kein OAuth nötig; run_auth_flow() legt lediglich den konfigurierten Pfad an,
 falls er noch nicht existiert.
 """
 
+import logging
 import os
 from pathlib import Path
 
 from config import load_local_storage_config
 from file_naming import message_date, sanitize_filename
 from message_loader import LoadedMessage
+
+logger = logging.getLogger(__name__)
 
 ROOT_FOLDER_NAME = "Email-Ablage"
 
@@ -37,9 +40,8 @@ def get_service() -> Path:
     # NAS-Host) von einem normalen Ordner innerhalb der Container-eigenen,
     # nicht persistenten Dateisystemebene (z.B. bei fehlerhaft konfiguriertem
     # Docker-Volume) - beides sieht für das Programm selbst identisch aus.
-    print(
-        f"[local_storage] Basis-Pfad: {root} "
-        f"(ist Mountpoint: {os.path.ismount(root)}), "
+    logger.info(
+        f"Basis-Pfad: {root} (ist Mountpoint: {os.path.ismount(root)}), "
         f"vorhandener Inhalt: {[p.name for p in root.iterdir()]}"
     )
     return root
@@ -68,10 +70,7 @@ def upload_attachments(root: Path, message: LoadedMessage, category: str) -> lis
         file_path.write_bytes(attachment.content)
 
         written_size = file_path.stat().st_size
-        print(
-            f"[local_storage] geschrieben: {file_path} "
-            f"({written_size} Bytes, erwartet {len(attachment.content)} Bytes)"
-        )
+        logger.info(f"geschrieben: {file_path} ({written_size} Bytes, erwartet {len(attachment.content)} Bytes)")
         written_paths.append(str(file_path))
 
     return written_paths

@@ -6,12 +6,15 @@ Modell-Anbindung unterscheidet.
 """
 
 import json
+import logging
 
 import requests
 
 from classifier import _SYSTEM_PROMPT, CATEGORIES, FALLBACK_CATEGORY, _build_prompt
 from config import LocalModelConfig
 from message_loader import LoadedMessage
+
+logger = logging.getLogger(__name__)
 
 _RESPONSE_FORMAT = {
     "type": "object",
@@ -41,7 +44,7 @@ def classify(message: LoadedMessage, config: LocalModelConfig) -> str:
         content = response.json()["message"]["content"]
         category = json.loads(content).get("category")
     except Exception as exc:
-        print(f"Klassifizierung fehlgeschlagen, verwende Fallback '{FALLBACK_CATEGORY}': {exc}")
+        logger.warning(f"Klassifizierung fehlgeschlagen, verwende Fallback '{FALLBACK_CATEGORY}': {exc}")
         return FALLBACK_CATEGORY
 
     return category if category in CATEGORIES else FALLBACK_CATEGORY
