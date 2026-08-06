@@ -3,6 +3,8 @@ services:
     build: .
     container_name: agent-email
     restart: unless-stopped
+    tty: true
+    stdin_open: true
     env_file:
       - .env
     volumes:

@@ -35,7 +35,7 @@ def classify(message: LoadedMessage, config: LocalModelConfig) -> str:
                 "format": _RESPONSE_FORMAT,
                 "stream": False,
             },
-            timeout=60,
+            timeout=240,
         )
         response.raise_for_status()
         content = response.json()["message"]["content"]
