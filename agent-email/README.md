@@ -242,6 +242,35 @@ docker compose up -d agent-email
 geladene Modell bleiben davon unberührt, da das Modell in einem separaten,
 persistenten Volume liegt.)
 
+### Dateien automatisiert übertragen (statt manuell per File Station)
+
+Manuelles Kopieren einzelner Dateien ist fehleranfällig (vergessene/veraltete
+Dateien, falsche Pfade). Das Skript [`deploy-to-nas.sh`](../deploy-to-nas.sh)
+im Repo-Root überträgt per SSH exakt den committeten Stand von `agent-email/`
+(`git archive`, keine ungewollten Dateien, keine Secrets, da `.env` & Co. nie
+getrackt werden):
+
+```bash
+NAS_HOST=192.168.178.xxx NAS_USER=dein-benutzer NAS_PATH=/pfad/zu/agent-email ./deploy-to-nas.sh
+```
+
+Voraussetzung: SSH-Key-Zugriff auf das NAS (siehe unten). Das Skript versucht
+danach automatisch `docker compose build/up` per SSH – das klappt nur, wenn
+der SSH-Benutzer zur Gruppe `administrators` gehört (Docker-Socket ist auf
+Synology root-only). Ohne Admin-Rechte überträgt das Skript trotzdem
+zuverlässig die Dateien und weist dann auf den nötigen manuellen Rebuild über
+Container Manager hin, statt fehlzuschlagen.
+
+**SSH-Key statt Passwort einrichten** (nötig, damit das Skript nicht-interaktiv
+läuft): Schlüsselpaar erzeugen, öffentlichen Schlüssel in
+`~/.ssh/authorized_keys` im Home-Verzeichnis des NAS-Benutzers eintragen
+(Home-Dienst muss aktiviert sein: Systemsteuerung → Benutzer & Gruppe →
+Erweitert). Wichtig: Datei **und** Verzeichnis müssen dem Zielbenutzer selbst
+gehören und `chmod 700 ~/.ssh` / `chmod 600 ~/.ssh/authorized_keys` haben –
+über File Station angelegte Dateien/Ordner reichen dafür oft nicht aus
+(ACL-Berechtigungen statt klassischer Unix-Rechte), am zuverlässigsten direkt
+per SSH-Sitzung anlegen.
+
 ### Fehlersuche ohne SSH
 
 - **Logs**: Container Manager → Container → `agent-email`/`ollama` →
