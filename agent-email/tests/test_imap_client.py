@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+import imap_client
 from config import ImapConfig
 from imap_client import connect, idle_listen, poll_new_messages
 from imap_client import test_connection as check_connection
@@ -60,10 +61,11 @@ def test_connection_reports_failure_on_connect_error(mock_load_config, mock_conn
     assert "Verbindung fehlgeschlagen" in caplog.text
 
 
+@patch("imap_client._touch_heartbeat")
 @patch("imap_client.time.sleep")
 @patch("imap_client.connect")
 @patch("imap_client.load_config")
-def test_poll_new_messages_calls_callback_for_new_uids(mock_load_config, mock_connect, mock_sleep):
+def test_poll_new_messages_calls_callback_for_new_uids(mock_load_config, mock_connect, mock_sleep, mock_heartbeat):
     mock_load_config.return_value = _config()
     client = MagicMock()
     client.search.side_effect = [{1, 2}, {1, 2, 3}]
@@ -77,11 +79,14 @@ def test_poll_new_messages_calls_callback_for_new_uids(mock_load_config, mock_co
 
     on_message.assert_called_once_with(client, 3)
     client.logout.assert_called_once()
+    # Einmal vor der Schleife, einmal im ersten (einzigen abgeschlossenen) Durchlauf.
+    assert mock_heartbeat.call_count == 2
 
 
+@patch("imap_client._touch_heartbeat")
 @patch("imap_client.connect")
 @patch("imap_client.load_config")
-def test_idle_listen_calls_callback_for_new_uids(mock_load_config, mock_connect):
+def test_idle_listen_calls_callback_for_new_uids(mock_load_config, mock_connect, mock_heartbeat):
     mock_load_config.return_value = _config()
     client = MagicMock()
     client.search.side_effect = [{1, 2}, {1, 2, 3}]
@@ -97,3 +102,24 @@ def test_idle_listen_calls_callback_for_new_uids(mock_load_config, mock_connect)
     assert client.idle.call_count == 2
     assert client.idle_done.call_count == 2
     client.logout.assert_called_once()
+    assert mock_heartbeat.call_count == 2
+
+
+def test_touch_heartbeat_creates_file(tmp_path, monkeypatch):
+    heartbeat_path = tmp_path / "heartbeat"
+    monkeypatch.setattr(imap_client, "HEARTBEAT_PATH", heartbeat_path)
+
+    imap_client._touch_heartbeat()
+
+    assert heartbeat_path.exists()
+
+
+def test_touch_heartbeat_logs_warning_instead_of_raising(monkeypatch, caplog):
+    unwritable_path = MagicMock()
+    unwritable_path.touch.side_effect = OSError("Festplatte voll")
+    monkeypatch.setattr(imap_client, "HEARTBEAT_PATH", unwritable_path)
+
+    with caplog.at_level("WARNING"):
+        imap_client._touch_heartbeat()
+
+    assert "konnte nicht geschrieben werden" in caplog.text
