@@ -35,7 +35,7 @@ def _authority(config: OneDriveConfig) -> str:
 def _load_cache() -> msal.SerializableTokenCache:
     cache = msal.SerializableTokenCache()
     if os.path.exists(TOKEN_CACHE_PATH):
-        with open(TOKEN_CACHE_PATH, "r") as f:
+        with open(TOKEN_CACHE_PATH) as f:
             cache.deserialize(f.read())
     return cache
 

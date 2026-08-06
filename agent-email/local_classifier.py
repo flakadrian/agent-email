@@ -9,7 +9,7 @@ import json
 
 import requests
 
-from classifier import CATEGORIES, FALLBACK_CATEGORY, _SYSTEM_PROMPT, _build_prompt
+from classifier import _SYSTEM_PROMPT, CATEGORIES, FALLBACK_CATEGORY, _build_prompt
 from config import LocalModelConfig
 from message_loader import LoadedMessage
 
