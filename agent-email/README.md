@@ -14,6 +14,8 @@ Anhänge. Sowohl Klassifizierung als auch Ablage sind austauschbar:
 Läuft entweder direkt mit Python (lokale Entwicklung/Tests, siehe unten) oder
 als Docker-Container, z. B. dauerhaft auf einem NAS (siehe Abschnitt 7).
 
+Änderungshistorie siehe [CHANGELOG.md](CHANGELOG.md).
+
 ## 1. Setup
 
 ```bash
