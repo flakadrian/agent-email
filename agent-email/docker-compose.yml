@@ -23,7 +23,10 @@ services:
   # Nach dem ersten Start Modell laden:
   #   docker exec -it ollama ollama pull qwen2.5:1.5b
   ollama:
-    image: ollama/ollama:latest
+    # Gepinnt statt :latest, damit ein Rebuild nicht unbemerkt eine neue
+    # Ollama-Version zieht, die sich anders verhält. Version bei Bedarf
+    # bewusst hochziehen und neu testen.
+    image: ollama/ollama:0.32.5
     container_name: ollama
     restart: unless-stopped
     volumes:

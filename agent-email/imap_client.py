@@ -14,6 +14,7 @@ Nachrichten kommt als nächster Baustein (Klassifizierung über Claude API).
 import logging
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from imapclient import IMAPClient
 
@@ -23,6 +24,19 @@ logger = logging.getLogger(__name__)
 
 # Wird für jede neu erkannte Nachricht aufgerufen, bekommt die UID übergeben.
 MessageCallback = Callable[[IMAPClient, int], None]
+
+# Wird bei jedem Schleifendurchlauf von poll_new_messages/idle_listen berührt.
+# Grundlage für den HEALTHCHECK im Dockerfile - erkennt einen hängenden
+# Prozess (läuft noch, reagiert aber nicht mehr), nicht nur einen Absturz
+# (den erkennt bereits Dockers "restart: unless-stopped" von selbst).
+HEARTBEAT_PATH = Path("/tmp/agent-email-heartbeat")
+
+
+def _touch_heartbeat() -> None:
+    try:
+        HEARTBEAT_PATH.touch()
+    except OSError as exc:
+        logger.warning(f"Heartbeat-Datei '{HEARTBEAT_PATH}' konnte nicht geschrieben werden: {exc}")
 
 
 def connect(config: ImapConfig) -> IMAPClient:
@@ -59,9 +73,11 @@ def poll_new_messages(on_message: MessageCallback, interval_seconds: int = 30) -
     seen_uids: set[int] = set(client.search("ALL"))
 
     logger.info(f"Polling gestartet, prüfe alle {interval_seconds}s auf neue Mails...")
+    _touch_heartbeat()
     try:
         while True:
             time.sleep(interval_seconds)
+            _touch_heartbeat()
             current_uids = set(client.search("ALL"))
             new_uids = current_uids - seen_uids
             for uid in sorted(new_uids):
@@ -79,6 +95,7 @@ def idle_listen(on_message: MessageCallback, idle_timeout_seconds: int = 60) -> 
     known_uids: set[int] = set(client.search("ALL"))
 
     logger.info("IDLE-Modus gestartet, warte auf neue Mails...")
+    _touch_heartbeat()
     try:
         while True:
             client.idle()
@@ -86,6 +103,7 @@ def idle_listen(on_message: MessageCallback, idle_timeout_seconds: int = 60) -> 
                 client.idle_check(timeout=idle_timeout_seconds)
             finally:
                 client.idle_done()
+            _touch_heartbeat()
 
             current_uids = set(client.search("ALL"))
             new_uids = current_uids - known_uids

@@ -254,6 +254,19 @@ persistenten Volume liegt.)
 - **Terminal**: `tty: true`/`stdin_open: true` sind für den
   `agent-email`-Service gesetzt, damit Container Manager ein Terminal
   anhängen kann (Container → Detail → Terminal).
+- **Health-Status**: Das `Dockerfile` enthält einen `HEALTHCHECK`, der prüft,
+  ob `listen`/`poll` noch aktiv Schleifendurchläufe macht (Heartbeat-Datei,
+  siehe `imap_client.py`). Erkennt einen hängenden Prozess (läuft noch,
+  reagiert aber nicht mehr) – sichtbar im Container-Status in Container
+  Manager, anders als ein reiner Absturz greift hier `restart:
+  unless-stopped` nicht automatisch.
+
+### Versionen
+
+Das `ollama`-Image ist in `docker-compose.yml` auf eine feste Version
+gepinnt (nicht `:latest`), damit ein Rebuild nicht unbemerkt eine neue
+Ollama-Version mit anderem Verhalten zieht. Bei Bedarf bewusst hochziehen
+und danach erneut testen.
 
 ## Tests
 
