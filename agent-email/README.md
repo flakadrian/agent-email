@@ -118,6 +118,12 @@ Bei Fehlern (z. B. API/Ollama nicht erreichbar, Timeout, unerwartete
 Antwort) fällt die Klassifizierung auf `Sonstiges` zurück statt abzustürzen
 (Log-Level `WARNING`).
 
+Ebenso bei der IMAP-Verbindung selbst: beendet der Mailserver die Verbindung
+(z. B. Timeout, TLS-Fehler oder ein serverseitiges BYE während IDLE – bei
+Dauerverbindungen über Stunden normal), wird das mit `WARNING` geloggt und
+die Verbindung automatisch neu aufgebaut, statt den Prozess abstürzen zu
+lassen.
+
 Mails **mit Anhang** werden zusätzlich in der konfigurierten Ablage
 abgelegt (Mails ohne Anhang bleiben nur klassifiziert, siehe Kategorienliste
 in `CLAUDE.md`), inkl. der geschriebenen Pfade/IDs:

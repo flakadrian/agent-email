@@ -11,12 +11,14 @@ Modul kümmert sich nur um den IMAP-Zugriff. Die Verarbeitung einzelner
 Nachrichten kommt als nächster Baustein (Klassifizierung über Claude API).
 """
 
+import imaplib
 import logging
 import time
 from collections.abc import Callable
 from pathlib import Path
 
 from imapclient import IMAPClient
+from imapclient.exceptions import IMAPClientError
 
 from config import ImapConfig, load_config
 
@@ -30,6 +32,27 @@ MessageCallback = Callable[[IMAPClient, int], None]
 # Prozess (läuft noch, reagiert aber nicht mehr), nicht nur einen Absturz
 # (den erkennt bereits Dockers "restart: unless-stopped" von selbst).
 HEARTBEAT_PATH = Path("/tmp/agent-email-heartbeat")
+
+# Bei einer Dauerverbindung (IDLE über Stunden) sind Abbrüche normal, z.B.
+# wenn der Provider die Verbindung nach einigen Stunden serverseitig kappt
+# (imaplib.IMAP4.abort/error), TLS mitten in der Übertragung endet
+# (ssl.SSLError, Unterklasse von OSError) oder der Server ein BYE schickt
+# (imapclient.exceptions.IMAPClientError). Das ist kein Programmfehler,
+# sondern erfordert nur ein Neuverbinden - darf also nicht den Prozess
+# abstürzen lassen (vorher: unbehandelte Exception killt main.py, und der
+# Dienst hängt bis zum nächsten Container-Neustart).
+_CONNECTION_ERRORS = (imaplib.IMAP4.error, IMAPClientError, OSError)
+
+_RECONNECT_DELAY_SECONDS = 5
+
+
+def _reconnect(broken_client: IMAPClient, config: ImapConfig) -> IMAPClient:
+    try:
+        broken_client.logout()
+    except Exception:
+        pass
+    time.sleep(_RECONNECT_DELAY_SECONDS)
+    return connect(config)
 
 
 def _touch_heartbeat() -> None:
@@ -78,11 +101,16 @@ def poll_new_messages(on_message: MessageCallback, interval_seconds: int = 30) -
         while True:
             time.sleep(interval_seconds)
             _touch_heartbeat()
-            current_uids = set(client.search("ALL"))
-            new_uids = current_uids - seen_uids
-            for uid in sorted(new_uids):
-                on_message(client, uid)
-            seen_uids = current_uids
+            try:
+                current_uids = set(client.search("ALL"))
+                new_uids = current_uids - seen_uids
+                for uid in sorted(new_uids):
+                    on_message(client, uid)
+                seen_uids = current_uids
+            except _CONNECTION_ERRORS as exc:
+                logger.warning(f"IMAP-Verbindung verloren ({exc!r}), baue Verbindung neu auf...")
+                client = _reconnect(client, config)
+                seen_uids = set(client.search("ALL"))
     finally:
         client.logout()
 
@@ -98,17 +126,22 @@ def idle_listen(on_message: MessageCallback, idle_timeout_seconds: int = 60) -> 
     _touch_heartbeat()
     try:
         while True:
-            client.idle()
             try:
-                client.idle_check(timeout=idle_timeout_seconds)
-            finally:
-                client.idle_done()
-            _touch_heartbeat()
+                client.idle()
+                try:
+                    client.idle_check(timeout=idle_timeout_seconds)
+                finally:
+                    client.idle_done()
+                _touch_heartbeat()
 
-            current_uids = set(client.search("ALL"))
-            new_uids = current_uids - known_uids
-            for uid in sorted(new_uids):
-                on_message(client, uid)
-            known_uids = current_uids
+                current_uids = set(client.search("ALL"))
+                new_uids = current_uids - known_uids
+                for uid in sorted(new_uids):
+                    on_message(client, uid)
+                known_uids = current_uids
+            except _CONNECTION_ERRORS as exc:
+                logger.warning(f"IMAP-Verbindung verloren ({exc!r}), baue Verbindung neu auf...")
+                client = _reconnect(client, config)
+                known_uids = set(client.search("ALL"))
     finally:
         client.logout()

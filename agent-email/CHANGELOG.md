@@ -8,6 +8,20 @@ Es gibt keine Versionsnummern/Releases, daher Gliederung nach Datum. Bei
 jeder nennenswerten Änderung (neues Feature, Verhaltensänderung, wichtiger
 Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
 
+## 2026-09-15 – Stabilität: automatischer Reconnect bei IMAP-Verbindungsabbrüchen
+
+- **Bugfix:** `listen`/`poll` stürzten alle paar Stunden komplett ab, wenn der
+  Mailserver die IMAP-Verbindung serverseitig beendete (Timeout, TLS-EOF,
+  BYE-Antwort während IDLE) – in den Logs sichtbar als wiederkehrende
+  `imaplib.IMAP4.abort`/`.error`- bzw. `ssl.SSLError`-Tracebacks im
+  ~3-Stunden-Rhythmus. Die Exception war unbehandelt und beendete den
+  gesamten Prozess; nur `restart: unless-stopped` brachte den Container
+  danach wieder hoch, mit spürbarer Lücke bis zum Neustart.
+- `idle_listen()`/`poll_new_messages()` fangen diese Verbindungsfehler jetzt
+  ab (`imaplib.IMAP4.error`, `imapclient.exceptions.IMAPClientError`,
+  `OSError`/`ssl.SSLError`), loggen eine `WARNING` und bauen die
+  IMAP-Verbindung selbst neu auf, statt den Prozess zu beenden.
+
 ## 2026-08-06 – Entwicklungsprozess gehärtet
 
 - **Sicherheitsfix:** Bind-Mount für `STORAGE_PROVIDER=local` band versehentlich
