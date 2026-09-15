@@ -1,6 +1,8 @@
+import imaplib
 from unittest.mock import MagicMock, patch
 
 import pytest
+from imapclient.exceptions import IMAPClientError
 
 import imap_client
 from config import ImapConfig
@@ -103,6 +105,80 @@ def test_idle_listen_calls_callback_for_new_uids(mock_load_config, mock_connect,
     assert client.idle_done.call_count == 2
     client.logout.assert_called_once()
     assert mock_heartbeat.call_count == 2
+
+
+@patch("imap_client._touch_heartbeat")
+@patch("imap_client.time.sleep")
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_idle_listen_reconnects_after_connection_error(mock_load_config, mock_connect, mock_sleep, mock_heartbeat):
+    mock_load_config.return_value = _config()
+
+    broken_client = MagicMock()
+    broken_client.search.return_value = {1, 2}
+    broken_client.idle_check.side_effect = imaplib.IMAP4.abort("timeout")
+
+    new_client = MagicMock()
+    new_client.search.side_effect = [{1, 2}, _StopLoop()]
+
+    mock_connect.side_effect = [broken_client, new_client]
+
+    on_message = MagicMock()
+
+    with pytest.raises(_StopLoop):
+        idle_listen(on_message, idle_timeout_seconds=1)
+
+    assert mock_connect.call_count == 2
+    broken_client.logout.assert_called_once()
+    new_client.logout.assert_called_once()
+
+
+@patch("imap_client._touch_heartbeat")
+@patch("imap_client.time.sleep")
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_idle_listen_reconnects_after_server_bye(mock_load_config, mock_connect, mock_sleep, mock_heartbeat):
+    """Reproduziert den in der Praxis beobachteten Absturz: der Server beendet
+    die IDLE-Verbindung serverseitig (z.B. nach ein paar Stunden Laufzeit)."""
+    mock_load_config.return_value = _config()
+
+    broken_client = MagicMock()
+    broken_client.search.return_value = {1}
+    broken_client.idle_check.side_effect = IMAPClientError("Unexpected IDLE response: b'* BYE timeout'")
+
+    new_client = MagicMock()
+    new_client.search.side_effect = [{1}, _StopLoop()]
+
+    mock_connect.side_effect = [broken_client, new_client]
+
+    with pytest.raises(_StopLoop):
+        idle_listen(MagicMock(), idle_timeout_seconds=1)
+
+    assert mock_connect.call_count == 2
+
+
+@patch("imap_client._touch_heartbeat")
+@patch("imap_client.time.sleep")
+@patch("imap_client.connect")
+@patch("imap_client.load_config")
+def test_poll_new_messages_reconnects_after_connection_error(
+    mock_load_config, mock_connect, mock_sleep, mock_heartbeat
+):
+    mock_load_config.return_value = _config()
+
+    broken_client = MagicMock()
+    broken_client.search.side_effect = [{1}, imaplib.IMAP4.abort("timeout")]
+
+    new_client = MagicMock()
+    new_client.search.side_effect = [{1}, _StopLoop()]
+
+    mock_connect.side_effect = [broken_client, new_client]
+
+    with pytest.raises(_StopLoop):
+        poll_new_messages(MagicMock(), interval_seconds=0)
+
+    assert mock_connect.call_count == 2
+    broken_client.logout.assert_called_once()
 
 
 def test_touch_heartbeat_creates_file(tmp_path, monkeypatch):
