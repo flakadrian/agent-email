@@ -118,6 +118,11 @@ Bei Fehlern (z. B. API/Ollama nicht erreichbar, Timeout, unerwartete
 Antwort) fällt die Klassifizierung auf `Sonstiges` zurück statt abzustürzen
 (Log-Level `WARNING`).
 
+Mails von bekannten automatisierten Absendern (z. B. GitHub-Benachrichtigungen)
+werden ganz ohne KI-Aufruf direkt auf `Sonstiges` geroutet (siehe
+`sender_filter.py`) – gerade kleine lokale Modelle klassifizieren solche
+Mails sonst unzuverlässig, statt korrekt auf `Sonstiges` auszuweichen.
+
 Ebenso bei der IMAP-Verbindung selbst: beendet der Mailserver die Verbindung
 (z. B. Timeout, TLS-Fehler oder ein serverseitiges BYE während IDLE – bei
 Dauerverbindungen über Stunden normal), wird das mit `WARNING` geloggt und

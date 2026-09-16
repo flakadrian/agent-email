@@ -47,6 +47,9 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
 - `agent-email/local_classifier.py` – Klassifizierung über ein lokales
   Ollama-Modell (gleiche Kategorienliste/Prompt wie classifier.py)
+- `agent-email/sender_filter.py` – erkennt bekannte automatisierte Absender
+  (z.B. GitHub-Benachrichtigungen) und routet sie ohne KI-Aufruf direkt auf
+  Sonstiges, da kleine lokale Modelle solche Mails unzuverlässig einordnen
 - `agent-email/file_naming.py` – gemeinsame Dateinamens-/Datums-Hilfsfunktionen
   für die Ablage
 - `agent-email/drive_client.py` – OAuth-Flow + Ablage der Anhänge in Google Drive

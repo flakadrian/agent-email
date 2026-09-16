@@ -73,3 +73,31 @@ def test_handle_message_skips_upload_when_no_attachments(mock_load_message, capl
     storage_module.upload_attachments.assert_not_called()
     assert "UID 7: 'Stromrechnung Juli' -> Kategorie: Newsletter" in caplog.text
     assert "abgelegt" not in caplog.text
+
+
+@patch("main.load_message")
+def test_handle_message_skips_classification_for_automated_sender(mock_load_message, caplog):
+    message = _message(
+        sender="GitHub <notifications@github.com>",
+        subject="[flakadrian/agent-email] Neuer Commit",
+        attachments=[],
+    )
+    mock_load_message.return_value = message
+
+    classifier_module = MagicMock()
+    storage_module = MagicMock()
+
+    with caplog.at_level("INFO"):
+        handle_message(
+            classifier_module,
+            "classifier-config",
+            storage_module,
+            "lokalem Pfad",
+            "storage-service",
+            MagicMock(),
+            99,
+        )
+
+    classifier_module.classify.assert_not_called()
+    assert "Kategorie: Sonstiges" in caplog.text
+    assert "Klassifizierung übersprungen" in caplog.text
