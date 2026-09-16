@@ -11,15 +11,15 @@
 # deployen.
 #
 # Aufruf:
-#   NAS_HOST=192.168.178.147 NAS_USER=Adi NAS_PATH=/volume1/docker/claude-agent/agent-email ./deploy-to-nas.sh
+#   NAS_HOST=192.168.1.100 NAS_USER=dein-nas-benutzer NAS_PATH=/volume1/docker/agent-email ./deploy-to-nas.sh
 #
 # Optional: NAS_PORT (Standard 22), NAS_REF (Standard: aktueller Branch/HEAD)
 
 set -euo pipefail
 
-: "${NAS_HOST:?Bitte NAS_HOST setzen (z.B. NAS_HOST=192.168.178.147)}"
-: "${NAS_USER:?Bitte NAS_USER setzen (z.B. NAS_USER=Adi)}"
-: "${NAS_PATH:?Bitte NAS_PATH setzen (z.B. NAS_PATH=/volume1/docker/claude-agent/agent-email)}"
+: "${NAS_HOST:?Bitte NAS_HOST setzen (z.B. NAS_HOST=192.168.1.100)}"
+: "${NAS_USER:?Bitte NAS_USER setzen (z.B. NAS_USER=dein-nas-benutzer)}"
+: "${NAS_PATH:?Bitte NAS_PATH setzen (z.B. NAS_PATH=/volume1/docker/agent-email)}"
 NAS_PORT="${NAS_PORT:-22}"
 NAS_REF="${NAS_REF:-HEAD}"
 
