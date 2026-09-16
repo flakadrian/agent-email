@@ -46,7 +46,9 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
 - `agent-email/local_classifier.py` – Klassifizierung über ein lokales
-  Ollama-Modell (gleiche Kategorienliste/Prompt wie classifier.py)
+  Ollama-Modell (gleiche Kategorienliste/Prompt wie classifier.py, aber
+  kürzerer Mailtext im Prompt wegen begrenzter CPU-Geschwindigkeit auf
+  typischer NAS-Hardware)
 - `agent-email/sender_filter.py` – erkennt bekannte automatisierte Absender
   (z.B. GitHub-Benachrichtigungen) und routet sie ohne KI-Aufruf direkt auf
   Sonstiges, da kleine lokale Modelle solche Mails unzuverlässig einordnen

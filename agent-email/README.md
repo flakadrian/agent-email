@@ -227,6 +227,14 @@ Sekunden auf eine Antwort, bevor es auf `Sonstiges` zurückfällt. Bei
 knappem RAM (deutlich unter ~2 GB frei) empfiehlt sich ein kleineres Modell,
 z. B. `qwen2.5:0.5b` statt `qwen2.5:1.5b`.
 
+Aus demselben Grund wird der Mailtext für den lokalen Pfad stärker gekürzt
+als für die Claude API (`_LOCAL_BODY_LIMIT` in `local_classifier.py`,
+aktuell 1500 statt 4000 Zeichen) – auf schwacher CPU gemessen wurden nur
+~4,5 Tokens/s Prompt-Verarbeitung, ein zu langer Prompt würde das Timeout
+zuverlässig reißen. Betreff, Absender und Anhang-Dateinamen bleiben davon
+unberührt (nie gekürzt, in beiden Pfaden). Bei Bedarf (z. B. leistungsfähigere
+Hardware) den Wert direkt in `local_classifier.py` anpassen.
+
 ## 7. Betrieb über Docker (z. B. auf einem NAS)
 
 Für dauerhaften Betrieb ohne offene SSH-Sitzung, z. B. auf einem Synology-NAS
