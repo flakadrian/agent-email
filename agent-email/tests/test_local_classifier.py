@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 from config import LocalModelConfig
-from local_classifier import FALLBACK_CATEGORY, classify
+from local_classifier import _LOCAL_BODY_LIMIT, FALLBACK_CATEGORY, classify
 from message_loader import LoadedMessage
 
 CONFIG = LocalModelConfig(host="http://ollama:11434", model="qwen2.5:1.5b")
@@ -66,3 +66,16 @@ def test_classify_falls_back_on_malformed_json(mock_post):
     category = classify(_message(), CONFIG)
 
     assert category == FALLBACK_CATEGORY
+
+
+@patch("local_classifier.requests.post")
+def test_classify_truncates_body_to_local_limit(mock_post):
+    mock_post.return_value = _chat_response("Sonstiges")
+    message = _message(body_text="x" * 5000)
+
+    classify(message, CONFIG)
+
+    _, kwargs = mock_post.call_args
+    sent_prompt = kwargs["json"]["messages"][1]["content"]
+    body_sent = sent_prompt.split("Text:\n", 1)[1]
+    assert len(body_sent) == _LOCAL_BODY_LIMIT

@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from classifier import FALLBACK_CATEGORY, classify
+from classifier import DEFAULT_BODY_LIMIT, FALLBACK_CATEGORY, _build_prompt, classify
 from config import AnthropicConfig
 from message_loader import LoadedMessage
 
@@ -74,3 +74,33 @@ def test_classify_falls_back_on_empty_response(mock_anthropic_cls):
     category = classify(_message(), CONFIG)
 
     assert category == FALLBACK_CATEGORY
+
+
+def test_build_prompt_truncates_body_to_default_limit():
+    message = _message(body_text="x" * 5000)
+
+    prompt = _build_prompt(message)
+
+    assert len(prompt.split("Text:\n", 1)[1]) == DEFAULT_BODY_LIMIT
+
+
+def test_build_prompt_respects_custom_body_limit():
+    message = _message(body_text="x" * 5000)
+
+    prompt = _build_prompt(message, body_limit=1500)
+
+    assert len(prompt.split("Text:\n", 1)[1]) == 1500
+
+
+def test_build_prompt_keeps_subject_sender_and_attachments_untruncated():
+    long_subject = "S" * 200
+    message = _message(
+        subject=long_subject,
+        sender="jemand-mit-einer-sehr-langen-adresse@beispiel.de",
+        body_text="x" * 5000,
+    )
+
+    prompt = _build_prompt(message, body_limit=100)
+
+    assert long_subject in prompt
+    assert message.sender in prompt

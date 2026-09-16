@@ -26,6 +26,11 @@ CATEGORIES = [
 
 FALLBACK_CATEGORY = "Sonstiges"
 
+# Standard-Obergrenze für den in den Prompt übernommenen Mailtext. Gilt für
+# die Claude API, die kein Geschwindigkeitsproblem mit langen Prompts hat.
+# local_classifier.py nutzt bewusst eine kleinere Grenze (siehe dort).
+DEFAULT_BODY_LIMIT = 4000
+
 _SYSTEM_PROMPT = """Du ordnest private E-Mails genau einer dieser Kategorien zu:
 
 - Rechnungen/Zahlungen: Rechnungen, Zahlungsaufforderungen, Mahnungen, Kontoauszüge
@@ -51,13 +56,13 @@ _CLASSIFY_TOOL = {
 }
 
 
-def _build_prompt(message: LoadedMessage) -> str:
+def _build_prompt(message: LoadedMessage, body_limit: int = DEFAULT_BODY_LIMIT) -> str:
     attachment_names = ", ".join(a.filename for a in message.attachments) or "keine"
     return (
         f"Betreff: {message.subject}\n"
         f"Absender: {message.sender}\n"
         f"Anhänge: {attachment_names}\n\n"
-        f"Text:\n{message.body_text[:4000]}"
+        f"Text:\n{message.body_text[:body_limit]}"
     )
 
 

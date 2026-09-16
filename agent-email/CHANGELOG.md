@@ -8,6 +8,21 @@ Es gibt keine Versionsnummern/Releases, daher Gliederung nach Datum. Bei
 jeder nennenswerten Änderung (neues Feature, Verhaltensänderung, wichtiger
 Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
 
+## 2026-09-16 – Prompt-Länge für lokale Klassifizierung begrenzt
+
+- **Bugfix:** Eine Mail mit längerem Text führte zu einem 1748-Token-Prompt,
+  der auf der schwachen NAS-CPU (gemessen ~4,5 Tokens/s Prompt-Verarbeitung)
+  nicht innerhalb des 240s-Timeouts verarbeitet werden konnte – Fallback auf
+  `Sonstiges` statt korrekter Klassifizierung.
+- `_build_prompt()` (`classifier.py`) nimmt jetzt ein `body_limit`-Argument;
+  Claude API nutzt weiterhin 4000 Zeichen (`DEFAULT_BODY_LIMIT`, keine
+  Geschwindigkeitsprobleme dort), der lokale Pfad (`local_classifier.py`)
+  nutzt bewusst nur 1500 Zeichen (`_LOCAL_BODY_LIMIT`) - rechnerisch
+  hergeleitet aus der gemessenen Geschwindigkeit, damit auch längere Mails
+  sicher innerhalb des Timeouts verarbeitet werden. Betreff, Absender und
+  Anhang-Dateinamen bleiben in beiden Fällen vollständig erhalten (nur der
+  Mailtext wird gekürzt).
+
 ## 2026-09-16 – Projektumfang bewusst auf einen einzelnen Agenten festgelegt
 
 - **Entscheidung:** Ursprünglich als erster Baustein eines geplanten
