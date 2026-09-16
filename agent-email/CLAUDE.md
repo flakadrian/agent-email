@@ -1,21 +1,24 @@
-# Projekt: Persönlicher Assistent mit Multi-Agent-Orchestrierung
+# Projekt: E-Mail-Agent (agent-email)
 
-Ein Orchestrator verteilt Anfragen/Ereignisse an spezialisierte Einzel-Agenten.
-Jeder Agent ist eigenständig, hat eigene Werkzeuge/Rechte und eigenen Kontext.
-Neue Fähigkeiten = neuer Agent mit eigener Konfiguration, nie ein Sonderfall
-im Orchestrator-Code.
+Eigenständiger Dienst, der ein IMAP-Postfach überwacht, neu eingehende Mails
+anhand einer festen Kategorienliste klassifiziert und Anhänge strukturiert
+ablegt. Bewusst als einzelnes, in sich abgeschlossenes Projekt geführt -
+kein Teil eines größeren Multi-Agent- oder Orchestrator-Systems.
 
 ## Aktueller Stand
 
-- Phase 0 abgeschlossen (Use Case, Tech-Stack, Interface-Vertrag definiert)
-- Erster Agent fertig: `agent-email/` – IMAP-Anbindung, Klassifizierung
-  (Claude API oder lokal via Ollama) und Ablage (Google Drive, OneDrive
-  oder lokaler Dateisystempfad, jeweils konfigurierbar) stehen; läuft
-  wahlweise direkt mit Python oder als Docker-Container (z. B. dauerhaft
-  auf einem NAS)
-- Orchestrator selbst existiert noch nicht (kommt in Phase 1)
+- Funktional vollständig: IMAP-Anbindung (IDLE bevorzugt, Polling als
+  Fallback, automatischer Reconnect bei Verbindungsabbrüchen), Klassifizierung
+  (Claude API oder lokal via Ollama), Ablage (Google Drive, OneDrive oder
+  lokaler Dateisystempfad), Betrieb lokal mit Python oder als Docker-Container
+  (z. B. dauerhaft auf einem NAS)
+- Entwicklungsprozess etabliert: CI (Tests + Linting bei jedem PR), gepinnte
+  Dependencies, strukturiertes Logging, gehärtetes Docker-Setup
+  (Healthcheck, gepinnte Image-Version, dedizierter Bind-Mount statt
+  Zugriff auf umfassendere Freigaben), automatisiertes Deployment-Skript
+- Läuft produktiv
 
-## Tech-Stack agent-email
+## Tech-Stack
 
 - Python, IMAP über `imapclient` (IDLE bevorzugt, Polling als Fallback)
 - Klassifizierung über die Claude API oder ein lokales Modell via Ollama,
@@ -39,7 +42,7 @@ python main.py listen  # auf neue Mails warten (IDLE)
 ## Architektur-Dateien
 
 - `agent-email/config.py` – lädt/validiert Umgebungsvariablen
-- `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE
+- `agent-email/imap_client.py` – IMAP-Verbindung, Polling, IDLE, Reconnect
 - `agent-email/message_loader.py` – lädt Nachrichteninhalt + Anhänge per UID
 - `agent-email/classifier.py` – Klassifizierung über die Claude API
 - `agent-email/local_classifier.py` – Klassifizierung über ein lokales
@@ -55,25 +58,28 @@ python main.py listen  # auf neue Mails warten (IDLE)
 - `agent-email/Dockerfile`/`agent-email/docker-compose.yml` – Container-Image
   und Compose-Setup für dauerhaften Betrieb (z. B. auf einem NAS), optional
   inkl. `ollama`-Service für die lokale Klassifizierung
+- `deploy-to-nas.sh` – überträgt den committeten Stand per SSH (`git
+  archive`) auf ein Zielsystem, statt Dateien manuell zu kopieren
 
 ## Regeln
 
 - Zugangsdaten/Secrets ausschließlich über `.env`, nie im Code oder Chat
 - Kategorienliste ist fest vorgegeben (siehe Anhang unten), nicht ohne
   Rücksprache ändern
-- Jeder neue Agent bekommt: Name, Zuständigkeits-Beschreibung, erlaubte
-  Werkzeuge, definiertes Ein-/Ausgabeformat – analog zum Interface-Vertrag
-  des agent-email
 - Kritische/irreversible Aktionen (z. B. Mail senden, Termin anlegen) nie ohne
   expliziten Freigabe-Schritt
+- Bind-Mounts für `STORAGE_PROVIDER=local` immer auf einen dedizierten
+  Ordner beschränken, nie auf eine umfassendere Freigabe mit anderen/privaten
+  Dateien (der Container läuft als root - siehe Kommentar in
+  `docker-compose.yml`)
+- Nennenswerte Änderungen im selben PR in `CHANGELOG.md` festhalten
 
-## Nächster Schritt
+## Weiterentwicklung
 
-`agent-email` ist damit abgeschlossen (IMAP, Klassifizierung, Ablage,
-Docker-Betrieb). Nächster Baustein: der Orchestrator selbst (Phase 1) sowie
-weitere Einzel-Agenten – jeweils mit eigenem Namen, Zuständigkeits-
-Beschreibung, erlaubten Werkzeugen und definiertem Ein-/Ausgabeformat (siehe
-Regeln oben).
+Keine Erweiterung um weitere Agenten oder einen Orchestrator geplant -
+Fokus bleibt auf `agent-email` selbst (Robustheit, neue Ablageziele,
+bessere Diagnose/Beobachtbarkeit etc.), siehe `CHANGELOG.md` für den
+bisherigen Verlauf.
 
 ## Anhang: Kategorienliste (Stand 2026-07-17)
 
