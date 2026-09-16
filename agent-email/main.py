@@ -14,6 +14,7 @@ import drive_client
 import local_classifier
 import local_storage
 import onedrive_client
+from classifier import FALLBACK_CATEGORY
 from config import (
     CLASSIFIER_PROVIDERS,
     STORAGE_PROVIDERS,
@@ -24,6 +25,7 @@ from config import (
 )
 from imap_client import test_connection
 from message_loader import load_message
+from sender_filter import is_automated_sender
 
 COMMANDS = {"test", "listen", "poll", "storage-auth"}
 
@@ -89,8 +91,16 @@ def handle_message(
     uid: int,
 ) -> None:
     message = load_message(client, uid)
-    category = classifier_module.classify(message, classifier_config)
-    logger.info(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
+
+    if is_automated_sender(message.sender):
+        category = FALLBACK_CATEGORY
+        logger.info(
+            f"UID {uid}: '{message.subject}' von automatisiertem Absender "
+            f"({message.sender}) -> Kategorie: {category} (Klassifizierung übersprungen)"
+        )
+    else:
+        category = classifier_module.classify(message, classifier_config)
+        logger.info(f"UID {uid}: '{message.subject}' -> Kategorie: {category}")
 
     if message.attachments:
         uploaded_ids = storage_module.upload_attachments(storage_service, message, category)

@@ -21,6 +21,18 @@ Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
   kein erneutes NAS-Redeployment auszulösen.
 - GitHub-Repo von `agent-assistant` zurück zu `agent-email` umbenannt,
   passend zum jetzt fixierten Alleinstellungszweck.
+- **Sicherheitsaudit vor Veröffentlichung:** Repo und komplette Git-Historie
+  auf Secrets geprüft (keine gefunden, `.gitignore` greift korrekt). Echte
+  interne NAS-IP und SSH-Benutzername aus den Beispiel-Kommentaren in
+  `deploy-to-nas.sh` entfernt (unnötige Preisgabe von Heimnetzwerk-Infos in
+  diesem öffentlichen Repo).
+- **Klassifizierungs-Genauigkeit:** Bekannte automatisierte Absender (z. B.
+  GitHub-Benachrichtigungen zu eigenen Commits/PRs) wurden vom lokalen
+  `qwen2.5:0.5b`-Modell fälschlich als `Rechnungen/Zahlungen` eingeordnet,
+  statt wie im Prompt vorgegeben auf `Sonstiges` auszuweichen – eine
+  Grenze kleiner lokaler Modelle bei ungewöhnlichem Inhalt. Neues Modul
+  `sender_filter.py` erkennt solche Absender jetzt vorab per Muster und
+  routet sie ohne KI-Aufruf direkt auf `Sonstiges`.
 
 ## 2026-09-15 – Stabilität: automatischer Reconnect bei IMAP-Verbindungsabbrüchen
 
