@@ -119,9 +119,18 @@ Antwort) fällt die Klassifizierung auf `Sonstiges` zurück statt abzustürzen
 (Log-Level `WARNING`).
 
 Mails von bekannten automatisierten Absendern (z. B. GitHub-Benachrichtigungen)
-werden ganz ohne KI-Aufruf direkt auf `Sonstiges` geroutet (siehe
-`sender_filter.py`) – gerade kleine lokale Modelle klassifizieren solche
-Mails sonst unzuverlässig, statt korrekt auf `Sonstiges` auszuweichen.
+werden ganz ohne KI-Aufruf direkt auf `Sonstiges` geroutet – gerade kleine
+lokale Modelle klassifizieren solche Mails sonst unzuverlässig, statt
+korrekt auf `Sonstiges` auszuweichen.
+
+**Weitere automatisierte Absender ergänzen:** Liste `AUTOMATED_SENDER_PATTERNS`
+in `sender_filter.py` bearbeiten, ein regulärer Ausdruck pro Zeile gegen die
+Absenderadresse (Groß-/Kleinschreibung egal), z. B. `r"no-reply@amazon\.de"`
+(Punkt mit `\.` escapen, sonst bedeutet er "irgendein Zeichen"). **Achtung:**
+Ein Treffer bedeutet immer `Sonstiges`, ohne Ausnahme – nur Muster ergänzen,
+bei denen wirklich jede Mail dieses Absenders dorthin gehört, sonst werden
+auch legitime Mails (z. B. echte Bestellbestätigungen) falsch einsortiert.
+Nach der Änderung wie gewohnt neu bauen (siehe "Updates einspielen" unten).
 
 Ebenso bei der IMAP-Verbindung selbst: beendet der Mailserver die Verbindung
 (z. B. Timeout, TLS-Fehler oder ein serverseitiges BYE während IDLE – bei
