@@ -8,6 +8,20 @@ Es gibt keine Versionsnummern/Releases, daher Gliederung nach Datum. Bei
 jeder nennenswerten Änderung (neues Feature, Verhaltensänderung, wichtiger
 Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
 
+## 2026-09-16 – Projektumfang bewusst auf einen einzelnen Agenten festgelegt
+
+- **Entscheidung:** Ursprünglich als erster Baustein eines geplanten
+  Multi-Agent-Systems mit Orchestrator angelegt (siehe ältere Einträge unten).
+  Bewusst dabei belassen, `agent-email` als eigenständiges, abgeschlossenes
+  Projekt weiterzuentwickeln – kein Orchestrator, keine weiteren Agenten
+  geplant.
+- `CLAUDE.md` und das Root-`README.md` entsprechend umgeschrieben (keine
+  "Phase 0/1"-Rahmung mehr, kein Verweis auf einen geplanten Orchestrator).
+  Ordnerstruktur (Root + `agent-email/`) bewusst unverändert gelassen, um
+  kein erneutes NAS-Redeployment auszulösen.
+- GitHub-Repo von `agent-assistant` zurück zu `agent-email` umbenannt,
+  passend zum jetzt fixierten Alleinstellungszweck.
+
 ## 2026-09-15 – Stabilität: automatischer Reconnect bei IMAP-Verbindungsabbrüchen
 
 - **Bugfix:** `listen`/`poll` stürzten alle paar Stunden komplett ab, wenn der
