@@ -27,6 +27,39 @@ services:
       # root diese ohnehin umgeht.
       - /volume1/Agent:/data
 
+  # Beispiel für ein zweites Postfach (siehe README.md, Abschnitt "Mehrere
+  # Postfächer"): eigener Container, eigene .env, eigene Token-/Ablage-Pfade,
+  # aber derselbe ollama-Service wie oben - das Modell muss nicht pro Account
+  # separat vorgehalten werden. Isolation entsteht allein durch die
+  # unterschiedlichen Volumes/env_file, main.py/config.py etc. bleiben
+  # unverändert (jeder Container kennt nur "seinen" Account).
+  #
+  # Zum Aktivieren: accounts/konto2/ anlegen (.env aus .env.example
+  # kopieren+ausfüllen, ggf. credentials.json/token.json/
+  # onedrive_token_cache.json), diesen Block einkommentieren, bei Bedarf
+  # umbenennen (Service-Name, container_name, Ordnername unter accounts/),
+  # und für jeden weiteren Account denselben Block erneut kopieren.
+  # agent-email-konto2:
+  #   build: .
+  #   container_name: agent-email-konto2
+  #   restart: unless-stopped
+  #   tty: true
+  #   stdin_open: true
+  #   env_file:
+  #     - accounts/konto2/.env
+  #   volumes:
+  #     - ./accounts/konto2/credentials.json:/app/credentials.json:ro
+  #     - ./accounts/konto2/token.json:/app/token.json
+  #     - ./accounts/konto2/onedrive_token_cache.json:/app/onedrive_token_cache.json
+  #     # Nur nötig, wenn STORAGE_PROVIDER=local in accounts/konto2/.env
+  #     # gesetzt ist. WICHTIG: eigener, exklusiver NAS-Ordner für DIESEN
+  #     # Account - niemals denselben Host-Pfad wie beim agent-email-Service
+  #     # oben (sonst überschreiben sich gleichnamige Anhänge aus
+  #     # unterschiedlichen Postfächern) und niemals eine umfassendere
+  #     # Freigabe mit anderen/privaten Dateien (siehe Warnung oben, gilt
+  #     # hier genauso, der Container läuft als root).
+  #     - /volume1/Agent-Konto2:/data
+  #
   # Nur nötig, wenn CLASSIFIER_PROVIDER=local in .env gesetzt ist.
   # Nach dem ersten Start Modell laden:
   #   docker exec -it ollama ollama pull qwen2.5:1.5b

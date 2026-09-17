@@ -8,6 +8,28 @@ Es gibt keine Versionsnummern/Releases, daher Gliederung nach Datum. Bei
 jeder nennenswerten Änderung (neues Feature, Verhaltensänderung, wichtiger
 Fix) einen Eintrag hier ergänzen, idealerweise im selben PR.
 
+## 2026-09-17 – Unterstützung für mehrere Postfächer
+
+- **Feature:** Mehrere IMAP-Accounts können jetzt parallel vom selben Agenten
+  überwacht werden - ein eigener Docker-Container pro Account, alle gegen
+  denselben `ollama`-Service (kein mehrfaches Vorhalten des lokalen Modells
+  auf schwacher NAS-Hardware). Jeder Account wählt unabhängig
+  `CLASSIFIER_PROVIDER`/`STORAGE_PROVIDER`.
+- Reine Deployment-/Doku-Erweiterung, **keine `*.py`-Datei geändert**: die
+  Isolation zwischen Accounts ergibt sich vollständig aus Container-/
+  Volume-Grenzen (Heartbeat-Datei ist bereits containerlokal, Token-/
+  Ablage-Pfade sind bereits über Volume-Mounts konfigurierbar).
+- Neue Konvention `agent-email/accounts/<name>/` für Config/Secrets
+  zusätzlicher Accounts (`.env` + ggf. `credentials.json`/`token.json`/
+  `onedrive_token_cache.json`), per `.gitignore` ausgeschlossen. Bestehender
+  Root-Account (`.env`, `token.json` etc.) bleibt unverändert, um kein
+  ungewolltes Redeploy des bereits laufenden Containers auszulösen.
+- `docker-compose.yml` enthält einen auskommentierten Beispiel-Service als
+  Vorlage zum Kopieren für weitere Accounts.
+- `deploy-to-nas.sh` baut/startet jetzt alle Compose-Services statt nur
+  `agent-email`, damit aktivierte Zusatz-Accounts automatisch mit
+  ausgerollt werden.
+
 ## 2026-09-16 – Prompt-Länge für lokale Klassifizierung begrenzt
 
 - **Bugfix:** Eine Mail mit längerem Text führte zu einem 1748-Token-Prompt,
