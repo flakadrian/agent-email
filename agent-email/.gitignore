@@ -8,3 +8,8 @@ credentials.json
 token.json
 onedrive_token_cache.json
 local-ablage/
+
+# Pro-Account-Secrets für den Mehrere-Postfächer-Betrieb (siehe README.md,
+# Abschnitt "Mehrere Postfächer") - jeder Unterordner enthält eine eigene
+# .env plus ggf. credentials.json/token.json/onedrive_token_cache.json.
+accounts/

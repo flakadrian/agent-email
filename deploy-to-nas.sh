@@ -36,10 +36,14 @@ git archive --format=tar "$NAS_REF" -- agent-email \
 echo "==> Dateien übertragen."
 echo "==> Versuche Rebuild über docker compose (kann fehlschlagen, falls ${NAS_USER} nicht in der Gruppe 'administrators' ist)..."
 
+# Ohne expliziten Service-Namen, damit auch zusätzliche Postfach-Accounts
+# (siehe README.md, Abschnitt "Mehrere Postfächer") automatisch mit
+# ausgerollt werden, sobald sie in docker-compose.yml aktiviert sind - "up -d"
+# fasst unveränderte Services (z.B. ollama) ohnehin nicht an.
 if ssh -p "$NAS_PORT" "${NAS_USER}@${NAS_HOST}" \
-  "cd '${NAS_PATH}' && docker compose build agent-email && docker compose up -d agent-email"; then
+  "cd '${NAS_PATH}' && docker compose build && docker compose up -d"; then
   echo "==> Rebuild erfolgreich."
 else
   echo "==> Rebuild fehlgeschlagen (vermutlich fehlende Docker-Berechtigung für ${NAS_USER})."
-  echo "    Dateien sind trotzdem übertragen - Rebuild manuell über Container Manager -> Projekt -> agent-email -> Neu erstellen."
+  echo "    Dateien sind trotzdem übertragen - Rebuild manuell über Container Manager -> Projekt -> Neu erstellen."
 fi

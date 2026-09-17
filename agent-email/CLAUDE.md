@@ -62,7 +62,14 @@ python main.py listen  # auf neue Mails warten (IDLE)
   Provider per `CLASSIFIER_PROVIDER`/`STORAGE_PROVIDER`
 - `agent-email/Dockerfile`/`agent-email/docker-compose.yml` – Container-Image
   und Compose-Setup für dauerhaften Betrieb (z. B. auf einem NAS), optional
-  inkl. `ollama`-Service für die lokale Klassifizierung
+  inkl. `ollama`-Service für die lokale Klassifizierung. Mehrere Postfächer
+  laufen als mehrere Services desselben Images (ein Container pro Account,
+  gemeinsam genutzter `ollama`-Service), Konfiguration/Secrets pro Account
+  unter `agent-email/accounts/<name>/` statt im Projekt-Root - siehe
+  README.md, Abschnitt "Mehrere Postfächer". Kein `*.py` ändert sich dafür,
+  die Isolation entsteht allein aus getrennten Containern/Volumes (Heartbeat
+  ist containerlokal unter `/tmp`, Token-/Ablage-Pfade sind über Volume-Mounts
+  konfigurierbar).
 - `deploy-to-nas.sh` – überträgt den committeten Stand per SSH (`git
   archive`) auf ein Zielsystem, statt Dateien manuell zu kopieren
 

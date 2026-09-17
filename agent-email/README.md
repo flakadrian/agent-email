@@ -335,6 +335,56 @@ gepinnt (nicht `:latest`), damit ein Rebuild nicht unbemerkt eine neue
 Ollama-Version mit anderem Verhalten zieht. Bei Bedarf bewusst hochziehen
 und danach erneut testen.
 
+## 8. Mehrere Postfächer
+
+Für ein zweites (oder drittes, ...) Postfach läuft ein eigener Container pro
+Account - alle auf demselben Image, alle gegen denselben `ollama`-Service
+(das Modell muss nicht mehrfach vorgehalten werden). Jeder Account kann
+unabhängig `CLASSIFIER_PROVIDER`/`STORAGE_PROVIDER` wählen. **Kein
+Python-Code wird dafür geändert** - die Isolation zwischen Accounts ergibt
+sich allein aus getrennten Containern/Volumes (siehe `CLAUDE.md`).
+
+Setzt den Docker-Betrieb aus Abschnitt 7 voraus.
+
+1. Ordner für den neuen Account anlegen und `.env` befüllen:
+   ```bash
+   mkdir -p accounts/konto2
+   cp .env.example accounts/konto2/.env
+   ```
+   `accounts/konto2/.env` wie in Abschnitt 2 beschrieben ausfüllen. Falls
+   `STORAGE_PROVIDER=google_drive`/`onedrive`: die zugehörigen
+   `credentials.json`/`token.json`/`onedrive_token_cache.json` (siehe
+   Abschnitt 5) ebenfalls nach `accounts/konto2/` legen statt in den
+   Projekt-Root.
+2. In `docker-compose.yml` den auskommentierten Beispiel-Service
+   `agent-email-konto2` einkommentieren. Bei Bedarf umbenennen (Service-Name,
+   `container_name`, Ordnername unter `accounts/` - müssen zusammenpassen).
+   Bei `STORAGE_PROVIDER=local`: **exklusiven** NAS-Ordner für diesen Account
+   setzen, niemals denselben Host-Pfad wie ein anderer Account oder eine
+   umfassendere Freigabe (siehe Warnung in Abschnitt 7/`.env.example`) -
+   sonst können sich gleichnamige Anhänge aus verschiedenen Postfächern
+   überschreiben.
+3. Verbindung testen und (falls nötig) Ablage autorisieren, gezielt für den
+   neuen Service:
+   ```bash
+   docker compose run --rm agent-email-konto2 python main.py test
+   docker compose run --rm agent-email-konto2 python main.py storage-auth
+   ```
+4. Bauen und starten:
+   ```bash
+   docker compose up -d --build agent-email-konto2
+   ```
+
+Für jeden weiteren Account denselben Ablauf mit einem neuen Namen
+wiederholen (Ordner unter `accounts/`, Compose-Service-Block kopieren).
+
+**Deployment:** `deploy-to-nas.sh` (siehe Abschnitt 7) überträgt weiterhin
+nur den committeten `agent-email/`-Stand - `accounts/` ist per `.gitignore`
+ausgeschlossen (enthält Secrets) und muss einmalig genauso wie die
+ursprüngliche `.env` manuell/separat auf das NAS gebracht werden. Der
+anschließende automatische Rebuild-Schritt des Skripts baut/startet danach
+ohne weiteres Zutun alle Services, inkl. neu aktivierter Accounts.
+
 ## Tests
 
 ```bash
